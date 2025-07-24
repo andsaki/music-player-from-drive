@@ -50,11 +50,13 @@ function App() {
                 Authorization: `Bearer ${accessToken}`,
               },
               params: {
-                q: "'1hxrPx7JxNbqmLhJz-xd4FSkNgg44VOXq' in parents and mimeType contains 'audio/'",
+                q: `'${import.meta.env.VITE_GOOGLE_DRIVE_FOLDER_ID}' in parents and mimeType contains 'audio/'`,
                 fields: 'files(id, name, mimeType)',
               },
             }
           );
+          console.log("VITE_GOOGLE_DRIVE_FOLDER_ID:", import.meta.env.VITE_GOOGLE_DRIVE_FOLDER_ID);
+          console.log("Constructed q parameter:", `'${import.meta.env.VITE_GOOGLE_DRIVE_FOLDER_ID}' in parents and mimeType contains 'audio/'`);
           console.log("Fetched music files:", response.data.files);
           setMusicFiles(response.data.files || []);
         } catch (error: unknown) {
