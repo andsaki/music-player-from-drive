@@ -2,27 +2,31 @@ import { useState, useEffect, useRef } from 'react';
 import { AppBar, Box, CssBaseline, Toolbar, Typography, Container, Paper, List, ListItem, ListItemText, Button, CircularProgress, Select, MenuItem, FormControl, InputLabel } from '@mui/material';
 import MusicNoteIcon from '@mui/icons-material/MusicNote';
 import { useGoogleLogin } from '@react-oauth/google';
-import axios from 'axios';
+import axios, { AxiosError } from 'axios';
 
 // Define the structure of a file from Google Drive API
 interface DriveFile {
   id: string;
   name: string;
   mimeType: string;
+  modifiedTime: string; // Add modifiedTime
+  parents: string[]; // Add parents
 }
 
 const folderOptions = [
+  { id: 'all', name: 'All Folders' }, // Option to show all folders
   { id: import.meta.env.VITE_GOOGLE_DRIVE_FOLDER_ID, name: 'Folder 1' },
   { id: import.meta.env.VITE_GOOGLE_DRIVE_FOLDER_ID_2, name: 'Folder 2' },
 ];
 
 function App() {
   const [accessToken, setAccessToken] = useState<string | null>(() => sessionStorage.getItem('googleAccessToken'));
-  const [musicFiles, setMusicFiles] = useState<DriveFile[]>([]);
+  const [allFetchedMusicFiles, setAllFetchedMusicFiles] = useState<DriveFile[]>([]); // All fetched files
+  const [musicFiles, setMusicFiles] = useState<DriveFile[]>([]); // Filtered files for display
   const [selectedFile, setSelectedFile] = useState<DriveFile | null>(null);
   const [loading, setLoading] = useState<boolean>(false); // New loading state
   const [playingLoading, setPlayingLoading] = useState<boolean>(false); // New playing loading state
-  const [currentFolderId, setCurrentFolderId] = useState<string>(folderOptions[0].id);
+  const [currentFilterFolderId, setCurrentFilterFolderId] = useState<string>('all'); // Default to all folders
   const audioRef = useRef<HTMLAudioElement>(null);
 
   const login = useGoogleLogin({
@@ -38,6 +42,7 @@ function App() {
   const handleLogout = () => {
     setAccessToken(null);
     sessionStorage.removeItem('googleAccessToken');
+    setAllFetchedMusicFiles([]); // Clear all fetched files on logout
     setMusicFiles([]); // Clear music files on logout
     setSelectedFile(null); // Clear selected file on logout
     setPlayingLoading(false); // Reset playing loading state on logout
@@ -47,10 +52,9 @@ function App() {
     }
   };
 
-  const handleFolderChange = (event: any) => {
-    setCurrentFolderId(event.target.value);
-    setMusicFiles([]); // Clear current music files
-    setSelectedFile(null); // Clear selected file
+  const handleFilterFolderChange = (event: any) => {
+    setCurrentFilterFolderId(event.target.value);
+    setSelectedFile(null); // Clear selected file on folder change
     setPlayingLoading(false); // Reset playing loading state
     if (audioRef.current) {
       audioRef.current.pause();
@@ -64,22 +68,27 @@ function App() {
       const fetchMusicFiles = async () => {
         setLoading(true); // Set loading to true before fetching
         try {
-          const response = await axios.get(
-            'https://www.googleapis.com/drive/v3/files',
-            {
-              headers: {
-                Authorization: `Bearer ${accessToken}`,
-              },
-              params: {
-                q: `'${currentFolderId}' in parents and mimeType contains 'audio/'`,
-                fields: 'files(id, name, mimeType)',
-              },
-            }
-          );
-          console.log("VITE_GOOGLE_DRIVE_FOLDER_ID:", import.meta.env.VITE_GOOGLE_DRIVE_FOLDER_ID);
-          console.log("Constructed q parameter:", `'${currentFolderId}' in parents and mimeType contains 'audio/'`);
-          console.log("Fetched music files:", response.data.files);
-          setMusicFiles(response.data.files || []);
+          const allFiles: DriveFile[] = [];
+          for (const folder of folderOptions.filter(opt => opt.id !== 'all')) { // Exclude 'all' option
+            const response = await axios.get(
+              'https://www.googleapis.com/drive/v3/files',
+              {
+                headers: {
+                  Authorization: `Bearer ${accessToken}`,
+                },
+                params: {
+                  q: `'${folder.id}' in parents and mimeType contains 'audio/'`,
+                  fields: 'files(id, name, mimeType, modifiedTime, parents)', // Request modifiedTime and parents
+                },
+              }
+            );
+            allFiles.push(...(response.data.files || []));
+          }
+          // Sort by modifiedTime in descending order (newest first)
+          allFiles.sort((a, b) => new Date(b.modifiedTime).getTime() - new Date(a.modifiedTime).getTime());
+          
+          console.log("Fetched music files:", allFiles);
+          setAllFetchedMusicFiles(allFiles);
         } catch (error: unknown) {
           console.error('Error fetching music files:', error);
           // If token is invalid, clear it to prompt re-login
@@ -93,7 +102,19 @@ function App() {
 
       fetchMusicFiles();
     }
-  }, [accessToken, currentFolderId]); // Add currentFolderId to dependency array
+  }, [accessToken]); // Only depends on accessToken
+
+  // Effect to filter music files based on currentFilterFolderId
+  useEffect(() => {
+    if (currentFilterFolderId === 'all') {
+      setMusicFiles(allFetchedMusicFiles);
+    } else {
+      const filtered = allFetchedMusicFiles.filter(file => 
+        file.parents && file.parents.includes(currentFilterFolderId)
+      );
+      setMusicFiles(filtered);
+    }
+  }, [currentFilterFolderId, allFetchedMusicFiles]);
 
   const playMusic = async (file: DriveFile) => {
     setSelectedFile(file);
@@ -150,13 +171,13 @@ function App() {
           </Typography>
           {accessToken && (
             <FormControl variant="standard" sx={{ m: 1, minWidth: 120 }}>
-              <InputLabel id="folder-select-label">Folder</InputLabel>
+              <InputLabel id="filter-folder-label">Filter Folder</InputLabel>
               <Select
-                labelId="folder-select-label"
-                id="folder-select"
-                value={currentFolderId}
-                onChange={handleFolderChange}
-                label="Folder"
+                labelId="filter-folder-label"
+                id="filter-folder-select"
+                value={currentFilterFolderId}
+                onChange={handleFilterFolderChange}
+                label="Filter Folder"
               >
                 {folderOptions.map((option) => (
                   <MenuItem key={option.id} value={option.id}>
@@ -199,7 +220,7 @@ function App() {
               Now Playing: {selectedFile.name}
             </Typography>
           )}
-          <audio ref={audioRef} controls style={{ width: '100%', marginTop: '10px' }} />
+          <audio ref={audioRef} controls autoPlay style={{ width: '100%', marginTop: '10px' }} />
       </Paper>
     </Box>
   );
