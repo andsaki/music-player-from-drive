@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
-import { AppBar, Box, CssBaseline, Toolbar, Typography, Container, Paper, List, ListItem, ListItemText, Button, CircularProgress } from '@mui/material';
+import { AppBar, Box, CssBaseline, Toolbar, Typography, Container, Paper, List, ListItem, ListItemText, Button, CircularProgress, Select, MenuItem, FormControl, InputLabel } from '@mui/material';
 import MusicNoteIcon from '@mui/icons-material/MusicNote';
 import { useGoogleLogin } from '@react-oauth/google';
-import axios from 'axios';
+import axios, { AxiosError } from 'axios';
 
 // Define the structure of a file from Google Drive API
 interface DriveFile {
@@ -11,12 +11,18 @@ interface DriveFile {
   mimeType: string;
 }
 
+const folderOptions = [
+  { id: import.meta.env.VITE_GOOGLE_DRIVE_FOLDER_ID, name: 'Folder 1' },
+  { id: import.meta.env.VITE_GOOGLE_DRIVE_FOLDER_ID_2, name: 'Folder 2' },
+];
+
 function App() {
   const [accessToken, setAccessToken] = useState<string | null>(() => sessionStorage.getItem('googleAccessToken'));
   const [musicFiles, setMusicFiles] = useState<DriveFile[]>([]);
   const [selectedFile, setSelectedFile] = useState<DriveFile | null>(null);
   const [loading, setLoading] = useState<boolean>(false); // New loading state
   const [playingLoading, setPlayingLoading] = useState<boolean>(false); // New playing loading state
+  const [currentFolderId, setCurrentFolderId] = useState<string>(folderOptions[0].id);
   const audioRef = useRef<HTMLAudioElement>(null);
 
   const login = useGoogleLogin({
@@ -41,6 +47,17 @@ function App() {
     }
   };
 
+  const handleFolderChange = (event: any) => {
+    setCurrentFolderId(event.target.value);
+    setMusicFiles([]); // Clear current music files
+    setSelectedFile(null); // Clear selected file
+    setPlayingLoading(false); // Reset playing loading state
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.src = '';
+    }
+  };
+
   useEffect(() => {
     console.log("Current accessToken:", accessToken);
     if (accessToken) {
@@ -54,13 +71,13 @@ function App() {
                 Authorization: `Bearer ${accessToken}`,
               },
               params: {
-                q: `'${import.meta.env.VITE_GOOGLE_DRIVE_FOLDER_ID}' in parents and mimeType contains 'audio/'`,
+                q: `'${currentFolderId}' in parents and mimeType contains 'audio/'`,
                 fields: 'files(id, name, mimeType)',
               },
             }
           );
           console.log("VITE_GOOGLE_DRIVE_FOLDER_ID:", import.meta.env.VITE_GOOGLE_DRIVE_FOLDER_ID);
-          console.log("Constructed q parameter:", `'${import.meta.env.VITE_GOOGLE_DRIVE_FOLDER_ID}' in parents and mimeType contains 'audio/'`);
+          console.log("Constructed q parameter:", `'${currentFolderId}' in parents and mimeType contains 'audio/'`);
           console.log("Fetched music files:", response.data.files);
           setMusicFiles(response.data.files || []);
         } catch (error: unknown) {
@@ -76,7 +93,7 @@ function App() {
 
       fetchMusicFiles();
     }
-  }, [accessToken]);
+  }, [accessToken, currentFolderId]); // Add currentFolderId to dependency array
 
   const playMusic = async (file: DriveFile) => {
     setSelectedFile(file);
@@ -127,9 +144,29 @@ function App() {
       </AppBar>
       
       <Container component="main" sx={{ mt: 0, mb: 2, flexGrow: 1, overflowY: 'auto', paddingBottom: '120px' }}>
-        <Typography variant="h4" component="h1" gutterBottom >
-          Track List
-        </Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+          <Typography variant="h4" component="h1" gutterBottom >
+            Track List
+          </Typography>
+          {accessToken && (
+            <FormControl variant="standard" sx={{ m: 1, minWidth: 120 }}>
+              <InputLabel id="folder-select-label">Folder</InputLabel>
+              <Select
+                labelId="folder-select-label"
+                id="folder-select"
+                value={currentFolderId}
+                onChange={handleFolderChange}
+                label="Folder"
+              >
+                {folderOptions.map((option) => (
+                  <MenuItem key={option.id} value={option.id}>
+                    {option.name}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          )}
+        </Box>
         {accessToken ? (
           loading ? (
             <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
