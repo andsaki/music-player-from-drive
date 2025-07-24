@@ -1,31 +1,31 @@
-# Music Player from Google Drive
+# Google Driveの音楽プレイヤー
 
-This is a web application to play music files stored in your Google Drive.
+これは、Google Driveに保存されている音楽ファイルを再生するためのWebアプリケーションです。
 
-## Tech Stack
+## 技術スタック
 
-- **Framework**: React (with TypeScript)
-- **UI Library**: Material-UI
-- **Build Tool**: Vite
+- **フレームワーク**: React (TypeScript)
+- **UIライブラリ**: Material-UI
+- **ビルドツール**: Vite
 
-## Current Status
+## 現在の状況
 
-- The basic project structure has been created.
-- Material-UI has been installed and a basic layout (Header, Content Area, Player Controls) has been implemented.
+- 基本的なプロジェクト構造が作成されました。
+- Material-UIがインストールされ、基本的なレイアウト（ヘッダー、コンテンツエリア、プレイヤーコントロール）が実装されました。
 
-## Next Steps
+## 次のステップ
 
-1.  **Implement Google Authentication**: Add a "Login with Google" button and allow users to sign in.
-2.  **Fetch Music Files**: Use the Google Drive API to find and list audio files.
-3.  **Implement Music Playback**: Stream and play the selected music file.
+1.  **Google認証の実装**: 「Googleでログイン」ボタンを追加し、ユーザーがサインインできるようにします。
+2.  **音楽ファイルの取得**: Google Drive APIを使用して、音声ファイルを見つけて一覧表示します。
+3.  **音楽再生の実装**: 選択した音楽ファイルをストリーミングして再生します。
 
-## How to Run
+## 実行方法
 
-1. Install dependencies:
+1. 依存関係をインストールします:
    ```bash
    npm install
    ```
-2. Start the development server:
+2. 開発サーバーを起動します:
    ```bash
    npm run dev
    ```
