@@ -1,10 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { AppBar, Box, CssBaseline, Toolbar, Typography, Container, Paper, List, ListItem, ListItemText, Button } from '@mui/material';
 import MusicNoteIcon from '@mui/icons-material/MusicNote';
-import PlayArrowIcon from '@mui/icons-material/PlayArrow';
-import PauseIcon from '@mui/icons-material/Pause';
-import SkipNextIcon from '@mui/icons-material/SkipNext';
-import SkipPreviousIcon from '@mui/icons-material/SkipPrevious';
 import { useGoogleLogin } from '@react-oauth/google';
 import axios from 'axios';
 
@@ -16,7 +12,7 @@ interface DriveFile {
 }
 
 function App() {
-  const [accessToken, setAccessToken] = useState<string | null>(null);
+  const [accessToken, setAccessToken] = useState<string | null>(() => sessionStorage.getItem('googleAccessToken'));
   const [musicFiles, setMusicFiles] = useState<DriveFile[]>([]);
   const [selectedFile, setSelectedFile] = useState<DriveFile | null>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
@@ -25,10 +21,22 @@ function App() {
     onSuccess: tokenResponse => {
       console.log("Login successful! Token response:", tokenResponse);
       setAccessToken(tokenResponse.access_token);
+      sessionStorage.setItem('googleAccessToken', tokenResponse.access_token);
     },
     onError: errorResponse => console.log("Login failed! Error:", errorResponse),
     scope: 'https://www.googleapis.com/auth/drive.readonly',
   });
+
+  const handleLogout = () => {
+    setAccessToken(null);
+    sessionStorage.removeItem('googleAccessToken');
+    setMusicFiles([]); // Clear music files on logout
+    setSelectedFile(null); // Clear selected file on logout
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.src = '';
+    }
+  };
 
   useEffect(() => {
     console.log("Current accessToken:", accessToken);
@@ -49,8 +57,12 @@ function App() {
           );
           console.log("Fetched music files:", response.data.files);
           setMusicFiles(response.data.files || []);
-        } catch (error) {
+        } catch (error: unknown) {
           console.error('Error fetching music files:', error);
+          // If token is invalid, clear it to prompt re-login
+          if (axios.isAxiosError(error) && error.response && error.response.status === 401) {
+            handleLogout();
+          }
         }
       };
 
@@ -75,7 +87,7 @@ function App() {
         audioRef.current.src = audioUrl;
         audioRef.current.play();
       }
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error playing music:', error);
     }
   };
@@ -94,7 +106,7 @@ function App() {
           </Button>
         </Toolbar>
       </AppBar>
-      
+
       <Container component="main" sx={{ mt: 4, mb: 2, flexGrow: 1 }}>
         <Typography variant="h4" component="h1" gutterBottom>
           Track List
@@ -116,7 +128,12 @@ function App() {
         )}
       </Container>
 
-      <Paper sx={{ position: 'fixed', bottom: 0, left: 0, right: 0, p: 2, display: 'flex', alignItems: 'center', justifyContent: 'center' }} elevation={3}>
+      <Paper sx={{ position: 'fixed', bottom: 0, left: 0, right: 0, p: 2, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }} elevation={3}>
+          {selectedFile && (
+            <Typography variant="subtitle1" component="div" sx={{ mb: 1 }}>
+              Now Playing: {selectedFile.name}
+            </Typography>
+          )}
           <audio ref={audioRef} controls style={{ width: '100%', marginTop: '10px' }} />
       </Paper>
     </Box>
