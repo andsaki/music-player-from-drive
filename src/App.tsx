@@ -26,8 +26,6 @@ function App() {
     } else {
       return [
         { id: 'all', name: 'All Folders' }, // 全てのフォルダを表示するオプション
-        { id: import.meta.env.VITE_GOOGLE_DRIVE_FOLDER_ID, name: 'Folder 1' }, // 環境変数から取得したフォルダID
-        { id: import.meta.env.VITE_GOOGLE_DRIVE_FOLDER_ID_2, name: 'Folder 2' }, // 環境変数から取得した別のフォルダID
       ];
     }
   });
