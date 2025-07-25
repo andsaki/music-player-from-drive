@@ -162,7 +162,7 @@ function App() {
       
       <Container component="main" sx={{ mt: 0, mb: 2, flexGrow: 1, overflowY: 'auto', paddingBottom: '120px' }}>
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
-          
+          {/* 「Track List」の表示を削除 */}
           {accessToken && (
             <FormControl variant="standard" sx={{ m: 1, minWidth: 120 }}>
               <InputLabel id="filter-folder-label">Filter Folder</InputLabel>
@@ -204,6 +204,7 @@ function App() {
             </List>
           )
         ) : (
+          /* ログインボタンをヘッダーからメインコンテンツエリアに移動し、メッセージを削除 */
           <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
             <Button variant="contained" onClick={() => login()}>
               Login with Google
@@ -218,6 +219,7 @@ function App() {
               Now Playing: {selectedFile.name}
             </Typography>
           )}
+          {/* 曲の再生終了時に次の曲を自動再生するロジックを追加 */}
           <audio ref={audioRef} controls autoPlay style={{ width: '100%', marginTop: '10px' }} onEnded={() => {
             if (selectedFile) {
               const currentIndex = musicFiles.findIndex(file => file.id === selectedFile.id);
