@@ -199,7 +199,7 @@ function App() {
           )}
         </Toolbar>
       </AppBar>
-      
+
       {/* メインコンテンツエリア */}
       <Container component="main" sx={{ mt: 0, mb: 2, flexGrow: 1, overflowY: 'auto', paddingBottom: '120px' }}>
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
@@ -216,7 +216,7 @@ function App() {
                   onChange={handleFilterFolderChange}
                   label="Filter Folder"
                 >
-                  {folderOptions.map((option) => (
+                  {folderOptions.map((option: { id: string; name: string }) => (
                     <MenuItem key={option.id} value={option.id}>
                       {option.name}
                     </MenuItem>
