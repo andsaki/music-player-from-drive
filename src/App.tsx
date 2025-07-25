@@ -6,7 +6,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import { useGoogleLogin } from '@react-oauth/google';
 import axios from 'axios';
 import type { SelectChangeEvent } from '@mui/material/Select';
-import FolderManagement from './components/FolderManagement';
+import FolderManagement from './components/FolderManagement.tsx';
 
 // Google Drive APIから取得するファイルの構造を定義
 interface DriveFile {
