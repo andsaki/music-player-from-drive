@@ -3,7 +3,7 @@ import { AppBar, Box, CssBaseline, Toolbar, Typography, Container, Paper, List, 
 import MusicNoteIcon from '@mui/icons-material/MusicNote';
 import { useGoogleLogin } from '@react-oauth/google';
 import axios from 'axios';
-import { SelectChangeEvent } from '@mui/material/Select';
+import type { SelectChangeEvent } from '@mui/material/Select';
 
 // Define the structure of a file from Google Drive API
 interface DriveFile {
