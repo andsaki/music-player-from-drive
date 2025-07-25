@@ -18,12 +18,24 @@ interface DriveFile {
 function App() {
   // フィルタリングオプションとして利用するフォルダの定義
   // useStateを使用して動的に管理できるようにする
-  const initialFolderOptions = [
-    { id: 'all', name: 'All Folders' }, // 全てのフォルダを表示するオプション
-    { id: import.meta.env.VITE_GOOGLE_DRIVE_FOLDER_ID, name: 'Folder 1' }, // 環境変数から取得したフォルダID
-    { id: import.meta.env.VITE_GOOGLE_DRIVE_FOLDER_ID_2, name: 'Folder 2' }, // 環境変数から取得した別のフォルダID
-  ];
-  const [folderOptions, setFolderOptions] = useState(initialFolderOptions); // フォルダオプションをstateで管理
+  // localStorageから初期値を読み込み、変更があればlocalStorageに保存する
+  const [folderOptions, setFolderOptions] = useState(() => {
+    const savedFolderOptions = localStorage.getItem('folderOptions');
+    if (savedFolderOptions) {
+      return JSON.parse(savedFolderOptions);
+    } else {
+      return [
+        { id: 'all', name: 'All Folders' }, // 全てのフォルダを表示するオプション
+        { id: import.meta.env.VITE_GOOGLE_DRIVE_FOLDER_ID, name: 'Folder 1' }, // 環境変数から取得したフォルダID
+        { id: import.meta.env.VITE_GOOGLE_DRIVE_FOLDER_ID_2, name: 'Folder 2' }, // 環境変数から取得した別のフォルダID
+      ];
+    }
+  });
+
+  // folderOptionsが変更されるたびにlocalStorageに保存
+  useEffect(() => {
+    localStorage.setItem('folderOptions', JSON.stringify(folderOptions));
+  }, [folderOptions]);
 
   // Googleアクセストークンを管理するstate。sessionStorageから初期値を読み込む。
   const [accessToken, setAccessToken] = useState<string | null>(() => sessionStorage.getItem('googleAccessToken'));
