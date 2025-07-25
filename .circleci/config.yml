@@ -3,23 +3,23 @@ version: 2.1
 jobs:
   build:
     docker:
-      - image: cimg/node:20.15.0 # Use a Node.js image
+      - image: cimg/node:20.15.0 # Node.js 20.15.0 イメージを使用
     steps:
-      - checkout
-      - restore_cache:
+      - checkout # リポジトリのコードをチェックアウト
+      - restore_cache: # キャッシュを復元
           keys:
-            - v1-dependencies-{{ checksum "package-lock.json" }}
-            - v1-dependencies-
-      - run: npm install
-      - save_cache:
+            - v1-dependencies-{{ checksum "package-lock.json" }} # package-lock.json のハッシュ値に基づいたキャッシュキー
+            - v1-dependencies- # フォールバック用のキャッシュキー
+      - run: npm install # 依存関係をインストール
+      - save_cache: # キャッシュを保存
           paths:
-            - node_modules
-          key: v1-dependencies-{{ checksum "package-lock.json" }}
-      - run: npm run build
-      - run: npm run lint
+            - node_modules # node_modules ディレクトリをキャッシュ
+          key: v1-dependencies-{{ checksum "package-lock.json" }} # package-lock.json のハッシュ値に基づいたキャッシュキー
+      - run: npm run build # プロジェクトをビルド
+      - run: npm run lint # リンティングを実行
 
 workflows:
   version: 2
   build_and_test:
     jobs:
-      - build
+      - build # build ジョブを実行
