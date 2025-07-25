@@ -138,7 +138,7 @@ function App() {
 
       fetchMusicFiles();
     }
-  }, [accessToken]); // accessTokenが変更されたときにのみ実行
+  }, [accessToken, folderOptions]); // accessTokenまたはfolderOptionsが変更されたときにのみ実行
 
   // フィルタリングフォルダIDまたはフェッチされた音楽ファイルが変更されたときに、表示用の音楽ファイルをフィルタリングするuseEffect
   useEffect(() => {
@@ -234,6 +234,7 @@ function App() {
           open={openFolderManagement}
           onClose={() => setOpenFolderManagement(false)}
           onAddFolder={handleAddFolder}
+          accessToken={accessToken} // accessTokenを渡す
         />
         {/* アクセストークンが存在する場合の表示ロジック */}
         {accessToken ? (
