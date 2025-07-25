@@ -53,11 +53,11 @@ function App() {
   const audioRef = useRef<HTMLAudioElement>(null);
 
   // フォルダ管理モーダルの開閉状態を管理するstate
-  const [openFolderManagement, setOpenFolderManagement] = useState(false); 
+  const [openFolderManagement, setOpenFolderManagement] = useState(false);
 
   // 新しいフォルダが追加されたときのハンドラ
   const handleAddFolder = (newFolder: { id: string; name: string }) => {
-    setFolderOptions(prevOptions => [...prevOptions, newFolder]);
+    setFolderOptions((prevOptions: Array<{ id: string; name: string }>) => [...prevOptions, newFolder]);
   };
 
   // Googleログイン処理のフック
@@ -122,7 +122,7 @@ function App() {
           }
           // 最終更新日時で降順にソート（新しいものが先頭）
           allFiles.sort((a, b) => new Date(b.modifiedTime).getTime() - new Date(a.modifiedTime).getTime());
-          
+
           console.log("Fetched music files:", allFiles);
           setAllFetchedMusicFiles(allFiles); // 全ての音楽ファイルをstateに保存
         } catch (error: unknown) {
@@ -138,7 +138,7 @@ function App() {
 
       fetchMusicFiles();
     }
-  }, [accessToken, folderOptions]); // accessTokenまたはfolderOptionsが変更されたときにのみ実行
+  }, [accessToken]); // accessTokenが変更されたときにのみ実行
 
   // フィルタリングフォルダIDまたはフェッチされた音楽ファイルが変更されたときに、表示用の音楽ファイルをフィルタリングするuseEffect
   useEffect(() => {
@@ -146,7 +146,7 @@ function App() {
       setMusicFiles(allFetchedMusicFiles); // 「全て」が選択されている場合は、全てのファイルをそのまま表示
     } else {
       // 選択されたフォルダIDに基づいてファイルをフィルタリング
-      const filtered = allFetchedMusicFiles.filter(file => 
+      const filtered = allFetchedMusicFiles.filter(file =>
         file.parents && file.parents.includes(currentFilterFolderId)
       );
       setMusicFiles(filtered); // フィルタリングされたファイルをstateに保存
