@@ -70,7 +70,7 @@ const FolderManagement: React.FC<FolderManagementProps> = ({ open, onClose, onAd
           autoFocus
           margin="dense"
           label="Folder ID"
-          type="text"
+          type="password"
           fullWidth
           variant="standard"
           value={folderId}

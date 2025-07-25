@@ -100,49 +100,50 @@ function App() {
     }
   };
 
-  // アクセストークンが変更されたときに音楽ファイルをフェッチするuseEffect
+  // 音楽ファイルをフェッチする関数
+  const fetchMusicFiles = async () => {
+    if (!accessToken) return;
+
+    setLoading(true); // フェッチ開始時にローディング状態をtrueに設定
+    try {
+      const allFiles: DriveFile[] = [];
+      // 定義された各フォルダから音楽ファイルをフェッチ（'all'オプションは除く）
+      for (const folder of folderOptions.filter((opt: { id: string; name: string }) => opt.id !== 'all')) {
+        const response = await axios.get(
+          'https://www.googleapis.com/drive/v3/files',
+          {
+            headers: {
+              Authorization: `Bearer ${accessToken}`, // アクセストークンをヘッダーに含める
+            },
+            params: {
+              q: `'${folder.id}' in parents and mimeType contains 'audio/'`, // フォルダ内のオーディオファイルを検索
+              fields: 'files(id, name, mimeType, modifiedTime, parents)', // 取得するフィールドを指定
+            },
+          }
+        );
+        allFiles.push(...(response.data.files || [])); // 取得したファイルをリストに追加
+      }
+      // 最終更新日時で降順にソート（新しいものが先頭）
+      allFiles.sort((a, b) => new Date(b.modifiedTime).getTime() - new Date(a.modifiedTime).getTime());
+
+      console.log("Fetched music files:", allFiles);
+      setAllFetchedMusicFiles(allFiles); // 全ての音楽ファイルをstateに保存
+    } catch (error: unknown) {
+      console.error('Error fetching music files:', error);
+      // トークンが無効な場合、ログアウトして再ログインを促す
+      if (axios.isAxiosError(error) && error.response && error.response.status === 401) {
+        handleLogout();
+      }
+    } finally {
+      setLoading(false); // フェッチ完了後にローディング状態をfalseに設定
+    }
+  };
+
+  // アクセストークンまたはフォルダオプションが変更されたときに音楽ファイルをフェッチするuseEffect
   useEffect(() => {
     console.log("Current accessToken:", accessToken);
-    if (accessToken) {
-      const fetchMusicFiles = async () => {
-        setLoading(true); // フェッチ開始時にローディング状態をtrueに設定
-        try {
-          const allFiles: DriveFile[] = [];
-          // 定義された各フォルダから音楽ファイルをフェッチ（'all'オプションは除く）
-          for (const folder of folderOptions.filter((opt: { id: string; name: string }) => opt.id !== 'all')) {
-            const response = await axios.get(
-              'https://www.googleapis.com/drive/v3/files',
-              {
-                headers: {
-                  Authorization: `Bearer ${accessToken}`, // アクセストークンをヘッダーに含める
-                },
-                params: {
-                  q: `'${folder.id}' in parents and mimeType contains 'audio/'`, // フォルダ内のオーディオファイルを検索
-                  fields: 'files(id, name, mimeType, modifiedTime, parents)', // 取得するフィールドを指定
-                },
-              }
-            );
-            allFiles.push(...(response.data.files || [])); // 取得したファイルをリストに追加
-          }
-          // 最終更新日時で降順にソート（新しいものが先頭）
-          allFiles.sort((a, b) => new Date(b.modifiedTime).getTime() - new Date(a.modifiedTime).getTime());
-
-          console.log("Fetched music files:", allFiles);
-          setAllFetchedMusicFiles(allFiles); // 全ての音楽ファイルをstateに保存
-        } catch (error: unknown) {
-          console.error('Error fetching music files:', error);
-          // トークンが無効な場合、ログアウトして再ログインを促す
-          if (axios.isAxiosError(error) && error.response && error.response.status === 401) {
-            handleLogout();
-          }
-        } finally {
-          setLoading(false); // フェッチ完了後にローディング状態をfalseに設定
-        }
-      };
-
-      fetchMusicFiles();
-    }
-  }, [accessToken]); // accessTokenが変更されたときにのみ実行
+    fetchMusicFiles();
+  }, [accessToken, folderOptions]); // accessTokenまたはfolderOptionsが変更されたときにのみ実行
 
   // フィルタリングフォルダIDまたはフェッチされた音楽ファイルが変更されたときに、表示用の音楽ファイルをフィルタリングするuseEffect
   useEffect(() => {
