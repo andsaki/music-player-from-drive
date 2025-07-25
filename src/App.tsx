@@ -52,7 +52,7 @@ function App() {
     }
   };
 
-  const handleFilterFolderChange = (event: any) => {
+  const handleFilterFolderChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
     setCurrentFilterFolderId(event.target.value);
     setSelectedFile(null); // Clear selected file on folder change
     setPlayingLoading(false); // Reset playing loading state
