@@ -181,6 +181,188 @@ function App() {
     }
   };
 
+  // Google Driveの共有リンクを生成する関数
+  const generateShareLink = (fileId: string) => {
+    return `https://drive.google.com/file/d/${fileId}/view?usp=sharing`;
+  };
+
+  // クリップボードにテキストをコピーする関数
+  const copyToClipboard = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setSnackbarMessage('共有リンクをクリップボードにコピーしました！');
+      setSnackbarOpen(true);
+    } catch (err) {
+      console.error('Failed to copy: ', err);
+      setSnackbarMessage('共有リンクのコピーに失敗しました。');
+      setSnackbarOpen(true);
+    }
+  };
+
+  // Snackbarを閉じるハンドラ
+  const handleSnackbarClose = (event: React.SyntheticEvent | Event, reason?: string) => {
+    if (reason === 'clickaway') {
+      return;
+    }
+    setSnackbarOpen(false);
+  };
+
+  // Google Driveの共有リンクを生成する関数
+  const generateShareLink = (fileId: string) => {
+    return `https://drive.google.com/file/d/${fileId}/view?usp=sharing`;
+  };
+
+  // クリップボードにテキストをコピーする関数
+  const copyToClipboard = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setSnackbarMessage('共有リンクをクリップボードにコピーしました！');
+      setSnackbarOpen(true);
+    } catch (err) {
+      console.error('Failed to copy: ', err);
+      setSnackbarMessage('共有リンクのコピーに失敗しました。');
+      setSnackbarOpen(true);
+    }
+  };
+
+  // Snackbarを閉じるハンドラ
+  const handleSnackbarClose = (event: React.SyntheticEvent | Event, reason?: string) => {
+    if (reason === 'clickaway') {
+      return;
+    }
+    setSnackbarOpen(false);
+  };
+
+  // Google Driveの共有リンクを生成する関数
+  const generateShareLink = (fileId: string) => {
+    return `https://drive.google.com/file/d/${fileId}/view?usp=sharing`;
+  };
+
+  // クリップボードにテキストをコピーする関数
+  const copyToClipboard = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setSnackbarMessage('共有リンクをクリップボードにコピーしました！');
+      setSnackbarOpen(true);
+    } catch (err) {
+      console.error('Failed to copy: ', err);
+      setSnackbarMessage('共有リンクのコピーに失敗しました。');
+      setSnackbarOpen(true);
+    }
+  };
+
+  // Snackbarを閉じるハンドラ
+  const handleSnackbarClose = (event: React.SyntheticEvent | Event, reason?: string) => {
+    if (reason === 'clickaway') {
+      return;
+    }
+    setSnackbarOpen(false);
+  };
+
+  // Google Driveの共有リンクを生成する関数
+  const generateShareLink = (fileId: string) => {
+    return `https://drive.google.com/file/d/${fileId}/view?usp=sharing`;
+  };
+
+  // クリップボードにテキストをコピーする関数
+  const copyToClipboard = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setSnackbarMessage('共有リンクをクリップボードにコピーしました！');
+      setSnackbarOpen(true);
+    } catch (err) {
+      console.error('Failed to copy: ', err);
+      setSnackbarMessage('共有リンクのコピーに失敗しました。');
+      setSnackbarOpen(true);
+    }
+  };
+
+  // Snackbarを閉じるハンドラ
+  const handleSnackbarClose = (event: React.SyntheticEvent | Event, reason?: string) => {
+    if (reason === 'clickaway') {
+      return;
+    }
+    setSnackbarOpen(false);
+  };
+
+  // Google Driveの共有リンクを生成する関数
+  const generateShareLink = (fileId: string) => {
+    return `https://drive.google.com/file/d/${fileId}/view?usp=sharing`;
+  };
+
+  // クリップボードにテキストをコピーする関数
+  const copyToClipboard = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setSnackbarMessage('共有リンクをクリップボードにコピーしました！');
+      setSnackbarOpen(true);
+    } catch (err) {
+      console.error('Failed to copy: ', err);
+      setSnackbarMessage('共有リンクのコピーに失敗しました。');
+      setSnackbarOpen(true);
+    }
+  };
+
+  // Snackbarを閉じるハンドラ
+  const handleSnackbarClose = (event: React.SyntheticEvent | Event, reason?: string) => {
+    if (reason === 'clickaway') {
+      return;
+    }
+    setSnackbarOpen(false);
+  };
+
+  // Google Driveの共有リンクを生成する関数
+  const generateShareLink = (fileId: string) => {
+    return `https://drive.google.com/file/d/${fileId}/view?usp=sharing`;
+  };
+
+  // クリップボードにテキストをコピーする関数
+  const copyToClipboard = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setSnackbarMessage('共有リンクをクリップボードにコピーしました！');
+      setSnackbarOpen(true);
+    } catch (err) {
+      console.error('Failed to copy: ', err);
+      setSnackbarMessage('共有リンクのコピーに失敗しました。');
+      setSnackbarOpen(true);
+    }
+  };
+
+  // Snackbarを閉じるハンドラ
+  const handleSnackbarClose = (event: React.SyntheticEvent | Event, reason?: string) => {
+    if (reason === 'clickaway') {
+      return;
+    }
+    setSnackbarOpen(false);
+  };
+
+  // Google Driveの共有リンクを生成する関数
+  const generateShareLink = (fileId: string) => {
+    return `https://drive.google.com/file/d/${fileId}/view?usp=sharing`;
+  };
+
+  // クリップボードにテキストをコピーする関数
+  const copyToClipboard = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setSnackbarMessage('共有リンクをクリップボードにコピーしました！');
+      setSnackbarOpen(true);
+    } catch (err) {
+      console.error('Failed to copy: ', err);
+      setSnackbarMessage('共有リンクのコピーに失敗しました。');
+      setSnackbarOpen(true);
+    }
+  };
+
+  // Snackbarを閉じるハンドラ
+  const handleSnackbarClose = (event: React.SyntheticEvent | Event, reason?: string) => {
+    if (reason === 'clickaway') {
+      return;
+    }
+    setSnackbarOpen(false);
+  };
+
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
       <CssBaseline />
@@ -246,11 +428,24 @@ function App() {
             <List>
               {musicFiles.length > 0 ? (
                 musicFiles.map((file) => (
-                  <ListItem component="button" key={file.id} onClick={() => playMusic(file)} sx={{ mb: 1 }}>
+                  <ListItem
+                    component="button"
+                    key={file.id}
+                    onClick={() => playMusic(file)}
+                    sx={{ mb: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }} // Flexboxで配置を調整
+                  >
                     <ListItemText primary={file.name} />
-                    {playingLoading && selectedFile?.id === file.id && (
-                      <CircularProgress size={20} sx={{ ml: 2 }} /> // 再生中のローディング表示
-                    )}
+                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                      {playingLoading && selectedFile?.id === file.id && (
+                        <CircularProgress size={20} sx={{ ml: 2 }} /> // 再生中のローディング表示
+                      )}
+                      <IconButton edge="end" aria-label="share" onClick={(e) => {
+                        e.stopPropagation(); // 親要素のonClickイベントが発火しないようにする
+                        copyToClipboard(generateShareLink(file.id));
+                      }}>
+                        <ShareIcon />
+                      </IconButton>
+                    </Box>
                   </ListItem>
                 ))
               ) : (
@@ -285,6 +480,19 @@ function App() {
             }
           }} />
       </Paper>
+
+      {/* Snackbar for copy feedback */}
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={3000}
+        onClose={handleSnackbarClose}
+        message={snackbarMessage}
+        action={
+          <IconButton size="small" aria-label="close" color="inherit" onClick={handleSnackbarClose}>
+            <CloseIcon fontSize="small" />
+          </IconButton>
+        }
+      />
     </Box>
   );
 }
