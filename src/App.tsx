@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
-import { AppBar, Box, CssBaseline, Toolbar, Typography, Container, Paper, List, ListItem, ListItemText, Button, CircularProgress, Select, MenuItem, FormControl, InputLabel } from '@mui/material';
+import { AppBar, Box, CssBaseline, Toolbar, Typography, Container, Paper, List, ListItem, ListItemText, Button, CircularProgress, Select, MenuItem, FormControl, InputLabel, Snackbar, IconButton } from '@mui/material';
 import MusicNoteIcon from '@mui/icons-material/MusicNote';
+import ShareIcon from '@mui/icons-material/Share';
+import CloseIcon from '@mui/icons-material/Close';
 import { useGoogleLogin } from '@react-oauth/google';
 import axios from 'axios';
 import type { SelectChangeEvent } from '@mui/material/Select';
@@ -54,6 +56,8 @@ function App() {
 
   // フォルダ管理モーダルの開閉状態を管理するstate
   const [openFolderManagement, setOpenFolderManagement] = useState(false);
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState('');
 
   // 新しいフォルダが追加されたときのハンドラ
   const handleAddFolder = (newFolder: { id: string; name: string }) => {
@@ -190,7 +194,7 @@ function App() {
   const copyToClipboard = async (text: string) => {
     try {
       await navigator.clipboard.writeText(text);
-      setSnackbarMessage('共有リンクをクリップボードにコピーしました！');
+      setSnackbarMessage('共有リンクをコピーしました！');
       setSnackbarOpen(true);
     } catch (err) {
       console.error('Failed to copy: ', err);
@@ -207,161 +211,6 @@ function App() {
     setSnackbarOpen(false);
   };
 
-  // Google Driveの共有リンクを生成する関数
-  const generateShareLink = (fileId: string) => {
-    return `https://drive.google.com/file/d/${fileId}/view?usp=sharing`;
-  };
-
-  // クリップボードにテキストをコピーする関数
-  const copyToClipboard = async (text: string) => {
-    try {
-      await navigator.clipboard.writeText(text);
-      setSnackbarMessage('共有リンクをクリップボードにコピーしました！');
-      setSnackbarOpen(true);
-    } catch (err) {
-      console.error('Failed to copy: ', err);
-      setSnackbarMessage('共有リンクのコピーに失敗しました。');
-      setSnackbarOpen(true);
-    }
-  };
-
-  // Snackbarを閉じるハンドラ
-  const handleSnackbarClose = (event: React.SyntheticEvent | Event, reason?: string) => {
-    if (reason === 'clickaway') {
-      return;
-    }
-    setSnackbarOpen(false);
-  };
-
-  // Google Driveの共有リンクを生成する関数
-  const generateShareLink = (fileId: string) => {
-    return `https://drive.google.com/file/d/${fileId}/view?usp=sharing`;
-  };
-
-  // クリップボードにテキストをコピーする関数
-  const copyToClipboard = async (text: string) => {
-    try {
-      await navigator.clipboard.writeText(text);
-      setSnackbarMessage('共有リンクをクリップボードにコピーしました！');
-      setSnackbarOpen(true);
-    } catch (err) {
-      console.error('Failed to copy: ', err);
-      setSnackbarMessage('共有リンクのコピーに失敗しました。');
-      setSnackbarOpen(true);
-    }
-  };
-
-  // Snackbarを閉じるハンドラ
-  const handleSnackbarClose = (event: React.SyntheticEvent | Event, reason?: string) => {
-    if (reason === 'clickaway') {
-      return;
-    }
-    setSnackbarOpen(false);
-  };
-
-  // Google Driveの共有リンクを生成する関数
-  const generateShareLink = (fileId: string) => {
-    return `https://drive.google.com/file/d/${fileId}/view?usp=sharing`;
-  };
-
-  // クリップボードにテキストをコピーする関数
-  const copyToClipboard = async (text: string) => {
-    try {
-      await navigator.clipboard.writeText(text);
-      setSnackbarMessage('共有リンクをクリップボードにコピーしました！');
-      setSnackbarOpen(true);
-    } catch (err) {
-      console.error('Failed to copy: ', err);
-      setSnackbarMessage('共有リンクのコピーに失敗しました。');
-      setSnackbarOpen(true);
-    }
-  };
-
-  // Snackbarを閉じるハンドラ
-  const handleSnackbarClose = (event: React.SyntheticEvent | Event, reason?: string) => {
-    if (reason === 'clickaway') {
-      return;
-    }
-    setSnackbarOpen(false);
-  };
-
-  // Google Driveの共有リンクを生成する関数
-  const generateShareLink = (fileId: string) => {
-    return `https://drive.google.com/file/d/${fileId}/view?usp=sharing`;
-  };
-
-  // クリップボードにテキストをコピーする関数
-  const copyToClipboard = async (text: string) => {
-    try {
-      await navigator.clipboard.writeText(text);
-      setSnackbarMessage('共有リンクをクリップボードにコピーしました！');
-      setSnackbarOpen(true);
-    } catch (err) {
-      console.error('Failed to copy: ', err);
-      setSnackbarMessage('共有リンクのコピーに失敗しました。');
-      setSnackbarOpen(true);
-    }
-  };
-
-  // Snackbarを閉じるハンドラ
-  const handleSnackbarClose = (event: React.SyntheticEvent | Event, reason?: string) => {
-    if (reason === 'clickaway') {
-      return;
-    }
-    setSnackbarOpen(false);
-  };
-
-  // Google Driveの共有リンクを生成する関数
-  const generateShareLink = (fileId: string) => {
-    return `https://drive.google.com/file/d/${fileId}/view?usp=sharing`;
-  };
-
-  // クリップボードにテキストをコピーする関数
-  const copyToClipboard = async (text: string) => {
-    try {
-      await navigator.clipboard.writeText(text);
-      setSnackbarMessage('共有リンクをクリップボードにコピーしました！');
-      setSnackbarOpen(true);
-    } catch (err) {
-      console.error('Failed to copy: ', err);
-      setSnackbarMessage('共有リンクのコピーに失敗しました。');
-      setSnackbarOpen(true);
-    }
-  };
-
-  // Snackbarを閉じるハンドラ
-  const handleSnackbarClose = (event: React.SyntheticEvent | Event, reason?: string) => {
-    if (reason === 'clickaway') {
-      return;
-    }
-    setSnackbarOpen(false);
-  };
-
-  // Google Driveの共有リンクを生成する関数
-  const generateShareLink = (fileId: string) => {
-    return `https://drive.google.com/file/d/${fileId}/view?usp=sharing`;
-  };
-
-  // クリップボードにテキストをコピーする関数
-  const copyToClipboard = async (text: string) => {
-    try {
-      await navigator.clipboard.writeText(text);
-      setSnackbarMessage('共有リンクをクリップボードにコピーしました！');
-      setSnackbarOpen(true);
-    } catch (err) {
-      console.error('Failed to copy: ', err);
-      setSnackbarMessage('共有リンクのコピーに失敗しました。');
-      setSnackbarOpen(true);
-    }
-  };
-
-  // Snackbarを閉じるハンドラ
-  const handleSnackbarClose = (event: React.SyntheticEvent | Event, reason?: string) => {
-    if (reason === 'clickaway') {
-      return;
-    }
-    setSnackbarOpen(false);
-  };
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
