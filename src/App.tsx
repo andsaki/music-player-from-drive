@@ -105,7 +105,7 @@ function App() {
         try {
           const allFiles: DriveFile[] = [];
           // 定義された各フォルダから音楽ファイルをフェッチ（'all'オプションは除く）
-          for (const folder of folderOptions.filter(opt => opt.id !== 'all')) {
+          for (const folder of folderOptions.filter((opt: { id: string; name: string }) => opt.id !== 'all')) {
             const response = await axios.get(
               'https://www.googleapis.com/drive/v3/files',
               {
