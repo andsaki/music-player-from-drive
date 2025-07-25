@@ -152,13 +152,9 @@ function App() {
           <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
             Music Player from Google Drive
           </Typography>
-          {accessToken ? (
+          {accessToken && (
             <Button color="inherit" onClick={handleLogout}>
               Logout
-            </Button>
-          ) : (
-            <Button color="inherit" onClick={() => login()}>
-              Login with Google
             </Button>
           )}
         </Toolbar>
@@ -166,9 +162,7 @@ function App() {
       
       <Container component="main" sx={{ mt: 0, mb: 2, flexGrow: 1, overflowY: 'auto', paddingBottom: '120px' }}>
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
-          <Typography variant="h4" component="h1" gutterBottom >
-            Track List
-          </Typography>
+          
           {accessToken && (
             <FormControl variant="standard" sx={{ m: 1, minWidth: 120 }}>
               <InputLabel id="filter-folder-label">Filter Folder</InputLabel>
@@ -210,7 +204,11 @@ function App() {
             </List>
           )
         ) : (
-          <Typography>Please log in to see your music files.</Typography>
+          <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
+            <Button variant="contained" onClick={() => login()}>
+              Login with Google
+            </Button>
+          </Box>
         )}
       </Container>
 
@@ -220,7 +218,14 @@ function App() {
               Now Playing: {selectedFile.name}
             </Typography>
           )}
-          <audio ref={audioRef} controls autoPlay style={{ width: '100%', marginTop: '10px' }} />
+          <audio ref={audioRef} controls autoPlay style={{ width: '100%', marginTop: '10px' }} onEnded={() => {
+            if (selectedFile) {
+              const currentIndex = musicFiles.findIndex(file => file.id === selectedFile.id);
+              if (currentIndex !== -1 && currentIndex < musicFiles.length - 1) {
+                playMusic(musicFiles[currentIndex + 1]);
+              }
+            }
+          }} />
       </Paper>
     </Box>
   );
