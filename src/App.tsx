@@ -4,6 +4,7 @@ import MusicNoteIcon from '@mui/icons-material/MusicNote';
 import { useGoogleLogin } from '@react-oauth/google';
 import axios from 'axios';
 import type { SelectChangeEvent } from '@mui/material/Select';
+import FolderManagement from './components/FolderManagement';
 
 // Google Drive APIから取得するファイルの構造を定義
 interface DriveFile {
@@ -14,14 +15,16 @@ interface DriveFile {
   parents: string[]; // 親フォルダのID
 }
 
-// フィルタリングオプションとして利用するフォルダの定義
-const folderOptions = [
-  { id: 'all', name: 'All Folders' }, // 全てのフォルダを表示するオプション
-  { id: import.meta.env.VITE_GOOGLE_DRIVE_FOLDER_ID, name: 'Folder 1' }, // 環境変数から取得したフォルダID
-  { id: import.meta.env.VITE_GOOGLE_DRIVE_FOLDER_ID_2, name: 'Folder 2' }, // 環境変数から取得した別のフォルダID
-];
-
 function App() {
+  // フィルタリングオプションとして利用するフォルダの定義
+  // useStateを使用して動的に管理できるようにする
+  const initialFolderOptions = [
+    { id: 'all', name: 'All Folders' }, // 全てのフォルダを表示するオプション
+    { id: import.meta.env.VITE_GOOGLE_DRIVE_FOLDER_ID, name: 'Folder 1' }, // 環境変数から取得したフォルダID
+    { id: import.meta.env.VITE_GOOGLE_DRIVE_FOLDER_ID_2, name: 'Folder 2' }, // 環境変数から取得した別のフォルダID
+  ];
+  const [folderOptions, setFolderOptions] = useState(initialFolderOptions); // フォルダオプションをstateで管理
+
   // Googleアクセストークンを管理するstate。sessionStorageから初期値を読み込む。
   const [accessToken, setAccessToken] = useState<string | null>(() => sessionStorage.getItem('googleAccessToken'));
   // Google Driveから取得した全ての音楽ファイルを保持するstate
@@ -38,6 +41,14 @@ function App() {
   const [currentFilterFolderId, setCurrentFilterFolderId] = useState<string>('all');
   // audio要素への参照を保持するref
   const audioRef = useRef<HTMLAudioElement>(null);
+
+  // フォルダ管理モーダルの開閉状態を管理するstate
+  const [openFolderManagement, setOpenFolderManagement] = useState(false); 
+
+  // 新しいフォルダが追加されたときのハンドラ
+  const handleAddFolder = (newFolder: { id: string; name: string }) => {
+    setFolderOptions(prevOptions => [...prevOptions, newFolder]);
+  };
 
   // Googleログイン処理のフック
   const login = useGoogleLogin({
@@ -183,26 +194,37 @@ function App() {
       <Container component="main" sx={{ mt: 0, mb: 2, flexGrow: 1, overflowY: 'auto', paddingBottom: '120px' }}>
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
           {/* 「Track List」の表示を削除 */}
-          {/* アクセストークンが存在する場合のみフォルダフィルタリングのドロップダウンを表示 */}
+          {/* アクセストークンが存在する場合のみフォルダフィルタリングのドロップダウンとフォルダ追加ボタンを表示 */}
           {accessToken && (
-            <FormControl variant="standard" sx={{ m: 1, minWidth: 120 }}>
-              <InputLabel id="filter-folder-label">Filter Folder</InputLabel>
-              <Select
-                labelId="filter-folder-label"
-                id="filter-folder-select"
-                value={currentFilterFolderId}
-                onChange={handleFilterFolderChange}
-                label="Filter Folder"
-              >
-                {folderOptions.map((option) => (
-                  <MenuItem key={option.id} value={option.id}>
-                    {option.name}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+              <FormControl variant="standard" sx={{ m: 1, minWidth: 120 }}>
+                <InputLabel id="filter-folder-label">Filter Folder</InputLabel>
+                <Select
+                  labelId="filter-folder-label"
+                  id="filter-folder-select"
+                  value={currentFilterFolderId}
+                  onChange={handleFilterFolderChange}
+                  label="Filter Folder"
+                >
+                  {folderOptions.map((option) => (
+                    <MenuItem key={option.id} value={option.id}>
+                      {option.name}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+              <Button variant="outlined" onClick={() => setOpenFolderManagement(true)}>
+                Add Folder
+              </Button>
+            </Box>
           )}
         </Box>
+        {/* FolderManagement モーダルコンポーネント */}
+        <FolderManagement
+          open={openFolderManagement}
+          onClose={() => setOpenFolderManagement(false)}
+          onAddFolder={handleAddFolder}
+        />
         {/* アクセストークンが存在する場合の表示ロジック */}
         {accessToken ? (
           loading ? (
@@ -257,4 +279,3 @@ function App() {
 }
 
 export default App;
-
