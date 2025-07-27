@@ -1,12 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogTitle, DialogContent, DialogActions, Button, TextField } from '@mui/material';
-
-interface MemoModalProps {
-  open: boolean;
-  onClose: () => void;
-  folderId: string;
-  folderName: string; // Add this line
-}
+import { type MemoModalProps } from '../types';
+import { LOCAL_STORAGE_KEYS } from '../constants';
 
 const MemoModal: React.FC<MemoModalProps> = ({ open, onClose, folderId, folderName }) => {
   const [memoText, setMemoText] = useState('');
@@ -14,7 +9,7 @@ const MemoModal: React.FC<MemoModalProps> = ({ open, onClose, folderId, folderNa
   // folderIdとopenの状態に基づいてメモを読み込む
   useEffect(() => {
     if (open && folderId) {
-      const memoKey = `userMemo_${folderId}`;
+      const memoKey = `${LOCAL_STORAGE_KEYS.USER_MEMO_PREFIX}${folderId}`;
       const savedMemo = localStorage.getItem(memoKey);
       if (savedMemo) {
         setMemoText(savedMemo);
@@ -27,7 +22,7 @@ const MemoModal: React.FC<MemoModalProps> = ({ open, onClose, folderId, folderNa
   // メモを保存するハンドラ
   const handleSaveMemo = () => {
     if (folderId) {
-      const memoKey = `userMemo_${folderId}`;
+      const memoKey = `${LOCAL_STORAGE_KEYS.USER_MEMO_PREFIX}${folderId}`;
       localStorage.setItem(memoKey, memoText);
     }
     onClose();
@@ -36,7 +31,7 @@ const MemoModal: React.FC<MemoModalProps> = ({ open, onClose, folderId, folderNa
   // モーダルが閉じられたときにメモを保存する（CloseボタンでもSaveボタンでも）
   const handleClose = () => {
     if (folderId) {
-      const memoKey = `userMemo_${folderId}`;
+      const memoKey = `${LOCAL_STORAGE_KEYS.USER_MEMO_PREFIX}${folderId}`;
       localStorage.setItem(memoKey, memoText);
     }
     onClose();

@@ -8,38 +8,31 @@ import axios from 'axios';
 import type { SelectChangeEvent } from '@mui/material/Select';
 import FolderManagement from './components/FolderManagement.tsx';
 import MemoModal from './components/MemoModal.tsx';
-
-// Google Drive APIから取得するファイルの構造を定義
-interface DriveFile {
-  id: string;
-  name: string;
-  mimeType: string;
-  modifiedTime: string; // 最終更新日時
-  parents: string[]; // 親フォルダのID
-}
+import { type DriveFile, type FolderOption } from './types';
+import { ALL_FOLDERS_OPTION, LOCAL_STORAGE_KEYS } from './constants';
 
 function App() {
   // フィルタリングオプションとして利用するフォルダの定義
   // useStateを使用して動的に管理できるようにする
   // localStorageから初期値を読み込み、変更があればlocalStorageに保存する
-  const [folderOptions, setFolderOptions] = useState(() => {
-    const savedFolderOptions = localStorage.getItem('folderOptions');
+  const [folderOptions, setFolderOptions] = useState<FolderOption[]>(() => {
+    const savedFolderOptions = localStorage.getItem(LOCAL_STORAGE_KEYS.FOLDER_OPTIONS);
     if (savedFolderOptions) {
       return JSON.parse(savedFolderOptions);
     } else {
       return [
-        { id: 'all', name: 'All Folders' }, // 全てのフォルダを表示するオプション
+        ALL_FOLDERS_OPTION,
       ];
     }
   });
 
   // folderOptionsが変更されるたびにlocalStorageに保存
   useEffect(() => {
-    localStorage.setItem('folderOptions', JSON.stringify(folderOptions));
+    localStorage.setItem(LOCAL_STORAGE_KEYS.FOLDER_OPTIONS, JSON.stringify(folderOptions));
   }, [folderOptions]);
 
   // Googleアクセストークンを管理するstate。sessionStorageから初期値を読み込む。
-  const [accessToken, setAccessToken] = useState<string | null>(() => sessionStorage.getItem('googleAccessToken'));
+  const [accessToken, setAccessToken] = useState<string | null>(() => sessionStorage.getItem(LOCAL_STORAGE_KEYS.GOOGLE_ACCESS_TOKEN));
   // Google Driveから取得した全ての音楽ファイルを保持するstate
   const [allFetchedMusicFiles, setAllFetchedMusicFiles] = useState<DriveFile[]>([]);
   // フィルタリングされた表示用の音楽ファイルを保持するstate
@@ -57,12 +50,12 @@ function App() {
 
   // フォルダ管理モーダルの開閉状態を管理するstate
   const [openFolderManagement, setOpenFolderManagement] = useState(false);
-  const [openMemoModal, setOpenMemoModal] = useState(false); // Add this line
+  const [openMemoModal, setOpenMemoModal] = useState(false);
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
 
   // 新しいフォルダが追加されたときのハンドラ
-  const handleAddFolder = (newFolder: { id: string; name: string }) => {
+  const handleAddFolder = (newFolder: FolderOption) => {
     setFolderOptions((prevOptions: Array<{ id: string; name: string }>) => [...prevOptions, newFolder]);
   };
 
@@ -71,7 +64,7 @@ function App() {
     onSuccess: tokenResponse => {
       console.log("Login successful! Token response:", tokenResponse);
       setAccessToken(tokenResponse.access_token);
-      sessionStorage.setItem('googleAccessToken', tokenResponse.access_token); // アクセストークンをsessionStorageに保存
+      sessionStorage.setItem(LOCAL_STORAGE_KEYS.GOOGLE_ACCESS_TOKEN, tokenResponse.access_token); // アクセストークンをsessionStorageに保存
     },
     onError: errorResponse => console.log("Login failed! Error:", errorResponse),
     scope: 'https://www.googleapis.com/auth/drive.readonly', // Google Driveの読み取り専用スコープ
@@ -80,7 +73,7 @@ function App() {
   // ログアウト処理
   const handleLogout = () => {
     setAccessToken(null); // アクセストークンをクリア
-    sessionStorage.removeItem('googleAccessToken'); // sessionStorageからアクセストークンを削除
+    sessionStorage.removeItem(LOCAL_STORAGE_KEYS.GOOGLE_ACCESS_TOKEN); // sessionStorageからアクセストークンを削除
     setAllFetchedMusicFiles([]); // 全ての音楽ファイルをクリア
     setMusicFiles([]); // 表示用の音楽ファイルをクリア
     setSelectedFile(null); // 選択中のファイルをクリア
@@ -250,7 +243,7 @@ function App() {
                   onChange={handleFilterFolderChange}
                   label="Filter Folder"
                 >
-                  {folderOptions.map((option: { id: string; name: string }) => (
+                  {folderOptions.map((option: FolderOption) => (
                     <MenuItem key={option.id} value={option.id}>
                       {option.name}
                     </MenuItem>
@@ -280,7 +273,7 @@ function App() {
           open={openMemoModal}
           onClose={() => setOpenMemoModal(false)}
           folderId={currentFilterFolderId}
-          folderName={folderOptions.find((option: { id: string; name: string }) => option.id === currentFilterFolderId)?.name || 'All Folders'}
+          folderName={folderOptions.find((option: FolderOption) => option.id === currentFilterFolderId)?.name || ALL_FOLDERS_OPTION.name}
         />
         {/* アクセストークンが存在する場合の表示ロジック */}
         {accessToken ? (

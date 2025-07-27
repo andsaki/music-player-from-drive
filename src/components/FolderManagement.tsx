@@ -1,13 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogTitle, DialogContent, DialogActions, TextField, Button, CircularProgress } from '@mui/material';
 import axios from 'axios';
-
-interface FolderManagementProps {
-  open: boolean;
-  onClose: () => void;
-  onAddFolder: (folder: { id: string; name: string }) => void;
-  accessToken: string | null; // accessTokenを追加
-}
+import { type FolderManagementProps } from '../types';
 
 const FolderManagement: React.FC<FolderManagementProps> = ({ open, onClose, onAddFolder, accessToken }) => {
   const [folderId, setFolderId] = useState('');
