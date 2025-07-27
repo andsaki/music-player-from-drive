@@ -10,7 +10,12 @@ import FolderManagement from './components/FolderManagement.tsx';
 import MemoModal from './components/MemoModal.tsx';
 import { type DriveFile, type FolderOption } from './types';
 import { ALL_FOLDERS_OPTION, LOCAL_STORAGE_KEYS } from './constants';
+import { generateShareLink, copyToClipboard } from './utils';
 
+/**
+ * メインアプリケーションコンポーネント。
+ * Google Driveから音楽ファイルを管理・再生する機能を提供します。
+ */
 function App() {
   // フィルタリングオプションとして利用するフォルダの定義
   // useStateを使用して動的に管理できるようにする
@@ -181,23 +186,7 @@ function App() {
     }
   };
 
-  // Google Driveの共有リンクを生成する関数
-  const generateShareLink = (fileId: string) => {
-    return `https://drive.google.com/file/d/${fileId}/view?usp=sharing`;
-  };
-
-  // クリップボードにテキストをコピーする関数
-  const copyToClipboard = async (text: string) => {
-    try {
-      await navigator.clipboard.writeText(text);
-      setSnackbarMessage('共有リンクをコピーしました！');
-      setSnackbarOpen(true);
-    } catch (err) {
-      console.error('Failed to copy: ', err);
-      setSnackbarMessage('共有リンクのコピーに失敗しました。');
-      setSnackbarOpen(true);
-    }
-  };
+  
 
   // Snackbarを閉じるハンドラ
   const handleSnackbarClose = (_event: React.SyntheticEvent | Event, reason?: string) => {

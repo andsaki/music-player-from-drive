@@ -3,6 +3,10 @@ import { Dialog, DialogTitle, DialogContent, DialogActions, TextField, Button, C
 import axios from 'axios';
 import { type FolderManagementProps } from '../types';
 
+/**
+ * フォルダ管理モーダルコンポーネント。
+ * Google DriveのフォルダIDを追加・管理します。
+ */
 const FolderManagement: React.FC<FolderManagementProps> = ({ open, onClose, onAddFolder, accessToken }) => {
   const [folderId, setFolderId] = useState('');
   const [folderName, setFolderName] = useState('');

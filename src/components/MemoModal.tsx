@@ -3,6 +3,10 @@ import { Dialog, DialogTitle, DialogContent, DialogActions, Button, TextField } 
 import { type MemoModalProps } from '../types';
 import { LOCAL_STORAGE_KEYS } from '../constants';
 
+/**
+ * メモモーダルコンポーネント。
+ * フォルダごとにメモを保存・表示します。
+ */
 const MemoModal: React.FC<MemoModalProps> = ({ open, onClose, folderId, folderName }) => {
   const [memoText, setMemoText] = useState('');
 
