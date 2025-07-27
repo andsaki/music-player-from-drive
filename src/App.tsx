@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { AppBar, Box, CssBaseline, Toolbar, Typography, Container, Paper, List, ListItem, ListItemText, Button, CircularProgress, Select, MenuItem, FormControl, InputLabel, Snackbar, IconButton } from '@mui/material';
+import { AppBar, Box, CssBaseline, Toolbar, Typography, Container, Paper, List, ListItemText, Button, CircularProgress, Select, MenuItem, FormControl, InputLabel, Snackbar, IconButton, ListItemButton } from '@mui/material';
 import MusicNoteIcon from '@mui/icons-material/MusicNote';
 import ShareIcon from '@mui/icons-material/Share';
 import CloseIcon from '@mui/icons-material/Close';
@@ -7,6 +7,7 @@ import { useGoogleLogin } from '@react-oauth/google';
 import axios from 'axios';
 import type { SelectChangeEvent } from '@mui/material/Select';
 import FolderManagement from './components/FolderManagement.tsx';
+import MemoModal from './components/MemoModal.tsx';
 
 // Google Drive APIから取得するファイルの構造を定義
 interface DriveFile {
@@ -56,6 +57,7 @@ function App() {
 
   // フォルダ管理モーダルの開閉状態を管理するstate
   const [openFolderManagement, setOpenFolderManagement] = useState(false);
+  const [openMemoModal, setOpenMemoModal] = useState(false); // Add this line
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
 
@@ -255,9 +257,13 @@ function App() {
                   ))}
                 </Select>
               </FormControl>
-              <Button variant="outlined" onClick={() => setOpenFolderManagement(true)}>
-                Add Folder
-              </Button>
+              {currentFilterFolderId === 'all' ? (
+                <Button variant="outlined" onClick={() => setOpenFolderManagement(true)}>
+                  Add Folder
+                </Button>
+              ) : (
+                <Button variant="outlined" onClick={() => setOpenMemoModal(true)}>Memo</Button>
+              )}
             </Box>
           )}
         </Box>
@@ -267,6 +273,14 @@ function App() {
           onClose={() => setOpenFolderManagement(false)}
           onAddFolder={handleAddFolder}
           accessToken={accessToken} // accessTokenを渡す
+        />
+        {/* MemoModal コンポーネント */}
+        {/* MemoModal コンポーネント */}
+        <MemoModal
+          open={openMemoModal}
+          onClose={() => setOpenMemoModal(false)}
+          folderId={currentFilterFolderId}
+          folderName={folderOptions.find((option: { id: string; name: string }) => option.id === currentFilterFolderId)?.name || 'All Folders'}
         />
         {/* アクセストークンが存在する場合の表示ロジック */}
         {accessToken ? (
@@ -278,8 +292,7 @@ function App() {
             <List>
               {musicFiles.length > 0 ? (
                 musicFiles.map((file) => (
-                  <ListItem
-                    component="button"
+                  <ListItemButton
                     key={file.id}
                     onClick={() => playMusic(file)}
                     sx={{ mb: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }} // Flexboxで配置を調整
@@ -296,7 +309,7 @@ function App() {
                         <ShareIcon />
                       </IconButton>
                     </Box>
-                  </ListItem>
+                  </ListItemButton>
                 ))
               ) : (
                 <Typography>No music files found in your Google Drive.</Typography> // 音楽ファイルが見つからない場合のメッセージ
