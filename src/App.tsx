@@ -1,16 +1,35 @@
-import { useState, useEffect, useRef } from 'react';
-import { AppBar, Box, CssBaseline, Toolbar, Typography, Container, Paper, List, ListItemText, Button, CircularProgress, Select, MenuItem, FormControl, InputLabel, Snackbar, IconButton, ListItemButton } from '@mui/material';
-import MusicNoteIcon from '@mui/icons-material/MusicNote';
-import ShareIcon from '@mui/icons-material/Share';
-import CloseIcon from '@mui/icons-material/Close';
-import { useGoogleLogin } from '@react-oauth/google';
-import axios from 'axios';
-import type { SelectChangeEvent } from '@mui/material/Select';
-import FolderManagement from './components/FolderManagement.tsx';
-import MemoModal from './components/MemoModal.tsx';
-import { type DriveFile, type FolderOption } from './types';
-import { ALL_FOLDERS_OPTION, LOCAL_STORAGE_KEYS } from './constants';
-import { generateShareLink, copyToClipboard } from './utils';
+import { useState, useEffect, useRef } from "react";
+import {
+  AppBar,
+  Box,
+  Paper,
+  CssBaseline,
+  Toolbar,
+  Typography,
+  Container,
+  List,
+  ListItemText,
+  Button,
+  CircularProgress,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
+  Snackbar,
+  IconButton,
+  ListItemButton,
+} from "@mui/material";
+import MusicNoteIcon from "@mui/icons-material/MusicNote";
+import ShareIcon from "@mui/icons-material/Share";
+import CloseIcon from "@mui/icons-material/Close";
+import { useGoogleLogin } from "@react-oauth/google";
+import axios from "axios";
+import type { SelectChangeEvent } from "@mui/material/Select";
+import FolderManagement from "./components/FolderManagement.tsx";
+import MemoModal from "./components/MemoModal.tsx";
+import { type DriveFile, type FolderOption } from "./types";
+import { ALL_FOLDERS_OPTION, LOCAL_STORAGE_KEYS } from "./constants";
+import { generateShareLink, copyToClipboard } from "./utils";
 
 /**
  * メインアプリケーションコンポーネント。
@@ -25,9 +44,7 @@ function App() {
     if (savedFolderOptions) {
       return JSON.parse(savedFolderOptions);
     } else {
-      return [
-        ALL_FOLDERS_OPTION,
-      ];
+      return [ALL_FOLDERS_OPTION];
     }
   });
 
@@ -37,7 +54,9 @@ function App() {
   }, [folderOptions]);
 
   // Googleアクセストークンを管理するstate。sessionStorageから初期値を読み込む。
-  const [accessToken, setAccessToken] = useState<string | null>(() => sessionStorage.getItem(LOCAL_STORAGE_KEYS.GOOGLE_ACCESS_TOKEN));
+  const [accessToken, setAccessToken] = useState<string | null>(() =>
+    sessionStorage.getItem(LOCAL_STORAGE_KEYS.GOOGLE_ACCESS_TOKEN),
+  );
   // Google Driveから取得した全ての音楽ファイルを保持するstate
   const [allFetchedMusicFiles, setAllFetchedMusicFiles] = useState<DriveFile[]>([]);
   // フィルタリングされた表示用の音楽ファイルを保持するstate
@@ -49,7 +68,7 @@ function App() {
   // 音楽再生中のローディング状態を管理するstate
   const [playingLoading, setPlayingLoading] = useState<boolean>(false);
   // 現在選択されているフィルタリングフォルダのIDを管理するstate（初期値は「全て」）
-  const [currentFilterFolderId, setCurrentFilterFolderId] = useState<string>('all');
+  const [currentFilterFolderId, setCurrentFilterFolderId] = useState<string>("all");
   // audio要素への参照を保持するref
   const audioRef = useRef<HTMLAudioElement>(null);
 
@@ -57,22 +76,25 @@ function App() {
   const [openFolderManagement, setOpenFolderManagement] = useState(false);
   const [openMemoModal, setOpenMemoModal] = useState(false);
   const [snackbarOpen, setSnackbarOpen] = useState(false);
-  const [snackbarMessage, setSnackbarMessage] = useState('');
+  const [snackbarMessage, setSnackbarMessage] = useState("");
 
   // 新しいフォルダが追加されたときのハンドラ
   const handleAddFolder = (newFolder: FolderOption) => {
-    setFolderOptions((prevOptions: Array<{ id: string; name: string }>) => [...prevOptions, newFolder]);
+    setFolderOptions((prevOptions: Array<{ id: string; name: string }>) => [
+      ...prevOptions,
+      newFolder,
+    ]);
   };
 
   // Googleログイン処理のフック
   const login = useGoogleLogin({
-    onSuccess: tokenResponse => {
+    onSuccess: (tokenResponse) => {
       console.log("Login successful! Token response:", tokenResponse);
       setAccessToken(tokenResponse.access_token);
       sessionStorage.setItem(LOCAL_STORAGE_KEYS.GOOGLE_ACCESS_TOKEN, tokenResponse.access_token); // アクセストークンをsessionStorageに保存
     },
-    onError: errorResponse => console.log("Login failed! Error:", errorResponse),
-    scope: 'https://www.googleapis.com/auth/drive.readonly', // Google Driveの読み取り専用スコープ
+    onError: (errorResponse) => console.log("Login failed! Error:", errorResponse),
+    scope: "https://www.googleapis.com/auth/drive.readonly", // Google Driveの読み取り専用スコープ
   });
 
   // ログアウト処理
@@ -85,7 +107,7 @@ function App() {
     setPlayingLoading(false); // 再生ローディング状態をリセット
     if (audioRef.current) {
       audioRef.current.pause(); // 再生中の音楽を停止
-      audioRef.current.src = ''; // audioソースをクリア
+      audioRef.current.src = ""; // audioソースをクリア
     }
   };
 
@@ -96,7 +118,7 @@ function App() {
     setPlayingLoading(false); // 再生ローディング状態をリセット
     if (audioRef.current) {
       audioRef.current.pause(); // 再生中の音楽を停止
-      audioRef.current.src = ''; // audioソースをクリア
+      audioRef.current.src = ""; // audioソースをクリア
     }
   };
 
@@ -108,28 +130,29 @@ function App() {
     try {
       const allFiles: DriveFile[] = [];
       // 定義された各フォルダから音楽ファイルをフェッチ（'all'オプションは除く）
-      for (const folder of folderOptions.filter((opt: { id: string; name: string }) => opt.id !== 'all')) {
-        const response = await axios.get(
-          'https://www.googleapis.com/drive/v3/files',
-          {
-            headers: {
-              Authorization: `Bearer ${accessToken}`, // アクセストークンをヘッダーに含める
-            },
-            params: {
-              q: `'${folder.id}' in parents and mimeType contains 'audio/'`, // フォルダ内のオーディオファイルを検索
-              fields: 'files(id, name, mimeType, modifiedTime, parents)', // 取得するフィールドを指定
-            },
-          }
-        );
+      for (const folder of folderOptions.filter(
+        (opt: { id: string; name: string }) => opt.id !== "all",
+      )) {
+        const response = await axios.get("https://www.googleapis.com/drive/v3/files", {
+          headers: {
+            Authorization: `Bearer ${accessToken}`, // アクセストークンをヘッダーに含める
+          },
+          params: {
+            q: `'${folder.id}' in parents and mimeType contains 'audio/'`, // フォルダ内のオーディオファイルを検索
+            fields: "files(id, name, mimeType, modifiedTime, parents)", // 取得するフィールドを指定
+          },
+        });
         allFiles.push(...(response.data.files || [])); // 取得したファイルをリストに追加
       }
       // 最終更新日時で降順にソート（新しいものが先頭）
-      allFiles.sort((a, b) => new Date(b.modifiedTime).getTime() - new Date(a.modifiedTime).getTime());
+      allFiles.sort(
+        (a, b) => new Date(b.modifiedTime).getTime() - new Date(a.modifiedTime).getTime(),
+      );
 
       console.log("Fetched music files:", allFiles);
       setAllFetchedMusicFiles(allFiles); // 全ての音楽ファイルをstateに保存
     } catch (error: unknown) {
-      console.error('Error fetching music files:', error);
+      console.error("Error fetching music files:", error);
       // トークンが無効な場合、ログアウトして再ログインを促す
       if (axios.isAxiosError(error) && error.response && error.response.status === 401) {
         handleLogout();
@@ -147,12 +170,12 @@ function App() {
 
   // フィルタリングフォルダIDまたはフェッチされた音楽ファイルが変更されたときに、表示用の音楽ファイルをフィルタリングするuseEffect
   useEffect(() => {
-    if (currentFilterFolderId === 'all') {
+    if (currentFilterFolderId === "all") {
       setMusicFiles(allFetchedMusicFiles); // 「全て」が選択されている場合は、全てのファイルをそのまま表示
     } else {
       // 選択されたフォルダIDに基づいてファイルをフィルタリング
-      const filtered = allFetchedMusicFiles.filter(file =>
-        file.parents && file.parents.includes(currentFilterFolderId)
+      const filtered = allFetchedMusicFiles.filter(
+        (file) => file.parents && file.parents.includes(currentFilterFolderId),
       );
       setMusicFiles(filtered); // フィルタリングされたファイルをstateに保存
     }
@@ -170,8 +193,8 @@ function App() {
           headers: {
             Authorization: `Bearer ${accessToken}`, // アクセストークンをヘッダーに含める
           },
-          responseType: 'blob', // バイナリデータとしてレスポンスを受け取る
-        }
+          responseType: "blob", // バイナリデータとしてレスポンスを受け取る
+        },
       );
       const audioUrl = URL.createObjectURL(response.data); // BlobからURLを作成
       if (audioRef.current) {
@@ -179,26 +202,39 @@ function App() {
         audioRef.current.play(); // 音楽を再生
       }
     } catch (error: unknown) {
-      console.error('Error playing music:', error);
+      console.error("Error playing music:", error);
     } finally {
       setPlayingLoading(false); // 再生完了後にローディング状態をfalseに設定
       console.log("Playing loading set to false for file:", file.name);
     }
   };
 
-  
+  const handleShareClick = async (e: React.MouseEvent, fileId: string) => {
+    e.stopPropagation(); // 親要素のonClickイベントが発火しないようにする
+    const result = await copyToClipboard(generateShareLink(fileId));
+    setSnackbarMessage(result.message);
+    setSnackbarOpen(true);
+  };
 
   // Snackbarを閉じるハンドラ
   const handleSnackbarClose = (_event: React.SyntheticEvent | Event, reason?: string) => {
-    if (reason === 'clickaway') {
+    if (reason === "clickaway") {
       return;
     }
     setSnackbarOpen(false);
   };
 
+  const handleAudioEnded = () => {
+    if (selectedFile) {
+      const currentIndex = musicFiles.findIndex((file) => file.id === selectedFile.id);
+      if (currentIndex !== -1 && currentIndex < musicFiles.length - 1) {
+        playMusic(musicFiles[currentIndex + 1]); // 次の曲を再生
+      }
+    }
+  };
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
+    <Box sx={{ display: "flex", flexDirection: "column", height: "100vh" }}>
       <CssBaseline />
       {/* アプリケーションのヘッダー部分 */}
       <AppBar position="static">
@@ -217,12 +253,15 @@ function App() {
       </AppBar>
 
       {/* メインコンテンツエリア */}
-      <Container component="main" sx={{ mt: 0, mb: 2, flexGrow: 1, overflowY: 'auto', paddingBottom: '120px' }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+      <Container
+        component="main"
+        sx={{ mt: 0, mb: 2, flexGrow: 1, overflowY: "auto", paddingBottom: "120px" }}
+      >
+        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 2 }}>
           {/* 「Track List」の表示を削除 */}
           {/* アクセストークンが存在する場合のみフォルダフィルタリングのドロップダウンとフォルダ追加ボタンを表示 */}
           {accessToken && (
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
               <FormControl variant="standard" sx={{ m: 1, minWidth: 120 }}>
                 <InputLabel id="filter-folder-label">Filter Folder</InputLabel>
                 <Select
@@ -239,12 +278,14 @@ function App() {
                   ))}
                 </Select>
               </FormControl>
-              {currentFilterFolderId === 'all' ? (
+              {currentFilterFolderId === "all" ? (
                 <Button variant="outlined" onClick={() => setOpenFolderManagement(true)}>
                   Add Folder
                 </Button>
               ) : (
-                <Button variant="outlined" onClick={() => setOpenMemoModal(true)}>Memo</Button>
+                <Button variant="outlined" onClick={() => setOpenMemoModal(true)}>
+                  Memo
+                </Button>
               )}
             </Box>
           )}
@@ -262,12 +303,15 @@ function App() {
           open={openMemoModal}
           onClose={() => setOpenMemoModal(false)}
           folderId={currentFilterFolderId}
-          folderName={folderOptions.find((option: FolderOption) => option.id === currentFilterFolderId)?.name || ALL_FOLDERS_OPTION.name}
+          folderName={
+            folderOptions.find((option: FolderOption) => option.id === currentFilterFolderId)
+              ?.name || ALL_FOLDERS_OPTION.name
+          }
         />
         {/* アクセストークンが存在する場合の表示ロジック */}
         {accessToken ? (
           loading ? (
-            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
+            <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
               <CircularProgress /> {/* ローディング中の表示 */}
             </Box>
           ) : (
@@ -277,17 +321,23 @@ function App() {
                   <ListItemButton
                     key={file.id}
                     onClick={() => playMusic(file)}
-                    sx={{ mb: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }} // Flexboxで配置を調整
+                    sx={{
+                      mb: 1,
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                    }} // Flexboxで配置を調整
                   >
                     <ListItemText primary={file.name} />
-                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <Box sx={{ display: "flex", alignItems: "center" }}>
                       {playingLoading && selectedFile?.id === file.id && (
                         <CircularProgress size={20} sx={{ ml: 2 }} /> // 再生中のローディング表示
                       )}
-                      <IconButton edge="end" aria-label="share" onClick={(e) => {
-                        e.stopPropagation(); // 親要素のonClickイベントが発火しないようにする
-                        copyToClipboard(generateShareLink(file.id));
-                      }}>
+                      <IconButton
+                        edge="end"
+                        aria-label="share"
+                        onClick={(e) => handleShareClick(e, file.id)}
+                      >
                         <ShareIcon />
                       </IconButton>
                     </Box>
@@ -300,7 +350,7 @@ function App() {
           )
         ) : (
           /* ログインボタンをヘッダーからメインコンテンツエリアに移動し、メッセージを削除 */
-          <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
+          <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
             <Button variant="contained" onClick={() => login()}>
               Login with Google
             </Button>
@@ -309,21 +359,32 @@ function App() {
       </Container>
 
       {/* 音楽プレーヤーコントロール部分 */}
-      <Paper sx={{ position: 'fixed', bottom: 0, left: 0, right: 0, p: 2, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }} elevation={3}>
-          {selectedFile && (
-            <Typography variant="subtitle1" component="div" sx={{ mb: 1 }}>
-              Now Playing: {selectedFile.name} {/* 現在再生中のファイル名を表示 */}
-            </Typography>
-          )}
-          {/* 曲の再生終了時に次の曲を自動再生するロジックを追加 */}
-          <audio ref={audioRef} controls autoPlay style={{ width: '100%', marginTop: '10px' }} onEnded={() => {
-            if (selectedFile) {
-              const currentIndex = musicFiles.findIndex(file => file.id === selectedFile.id);
-              if (currentIndex !== -1 && currentIndex < musicFiles.length - 1) {
-                playMusic(musicFiles[currentIndex + 1]); // 次の曲を再生
-              }
-            }
-          }} />
+      <Paper
+        sx={{
+          position: "fixed",
+          bottom: 0,
+          left: 0,
+          right: 0,
+          p: 2,
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        {selectedFile && (
+          <Typography variant="subtitle1" component="div" sx={{ mb: 1 }}>
+            Now Playing: {selectedFile.name} {/* 現在再生中のファイル名を表示 */}
+          </Typography>
+        )}
+        {/* 曲の再生終了時に次の曲を自動再生するロジックを追加 */}
+        <audio
+          ref={audioRef}
+          controls
+          autoPlay
+          style={{ width: "100%", marginTop: "10px" }}
+          onEnded={handleAudioEnded}
+        />
       </Paper>
 
       {/* Snackbar for copy feedback */}

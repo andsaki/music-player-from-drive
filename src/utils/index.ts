@@ -15,9 +15,9 @@ export const generateShareLink = (fileId: string) => {
 export const copyToClipboard = async (text: string) => {
   try {
     await navigator.clipboard.writeText(text);
-    return { success: true, message: '共有リンクをコピーしました！' };
+    return { success: true, message: "共有リンクをコピーしました！" };
   } catch (err) {
-    console.error('Failed to copy: ', err);
-    return { success: false, message: '共有リンクのコピーに失敗しました。' };
+    console.error("Failed to copy: ", err);
+    return { success: false, message: "共有リンクのコピーに失敗しました。" };
   }
 };

@@ -1,15 +1,28 @@
-import React, { useState, useEffect } from 'react';
-import { Dialog, DialogTitle, DialogContent, DialogActions, TextField, Button, CircularProgress } from '@mui/material';
-import axios from 'axios';
-import { type FolderManagementProps } from '../types';
+import React, { useState, useEffect } from "react";
+import {
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
+  Button,
+  CircularProgress,
+} from "@mui/material";
+import axios from "axios";
+import { type FolderManagementProps } from "../types";
 
 /**
  * フォルダ管理モーダルコンポーネント。
  * Google DriveのフォルダIDを追加・管理します。
  */
-const FolderManagement: React.FC<FolderManagementProps> = ({ open, onClose, onAddFolder, accessToken }) => {
-  const [folderId, setFolderId] = useState('');
-  const [folderName, setFolderName] = useState('');
+const FolderManagement: React.FC<FolderManagementProps> = ({
+  open,
+  onClose,
+  onAddFolder,
+  accessToken,
+}) => {
+  const [folderId, setFolderId] = useState("");
+  const [folderName, setFolderName] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -26,25 +39,25 @@ const FolderManagement: React.FC<FolderManagementProps> = ({ open, onClose, onAd
                 Authorization: `Bearer ${accessToken}`,
               },
               params: {
-                fields: 'name,mimeType',
+                fields: "name,mimeType",
               },
-            }
+            },
           );
-          if (response.data.mimeType === 'application/vnd.google-apps.folder') {
+          if (response.data.mimeType === "application/vnd.google-apps.folder") {
             setFolderName(response.data.name);
           } else {
-            setError('The provided ID is not a folder ID.');
-            setFolderName('');
+            setError("The provided ID is not a folder ID.");
+            setFolderName("");
           }
         } catch (err) {
-          console.error('Error fetching folder name:', err);
-          setError('Failed to fetch folder name. Please check the ID.');
-          setFolderName('');
+          console.error("Error fetching folder name:", err);
+          setError("Failed to fetch folder name. Please check the ID.");
+          setFolderName("");
         } finally {
           setLoading(false);
         }
       } else {
-        setFolderName('');
+        setFolderName("");
         setError(null);
       }
     };
@@ -54,8 +67,8 @@ const FolderManagement: React.FC<FolderManagementProps> = ({ open, onClose, onAd
   const handleAdd = () => {
     if (folderId && folderName) {
       onAddFolder({ id: folderId, name: folderName });
-      setFolderId('');
-      setFolderName('');
+      setFolderId("");
+      setFolderName("");
       onClose();
     }
   };
@@ -92,7 +105,9 @@ const FolderManagement: React.FC<FolderManagementProps> = ({ open, onClose, onAd
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose}>Cancel</Button>
-        <Button onClick={handleAdd} disabled={!folderId || !folderName || loading}>Add</Button>
+        <Button onClick={handleAdd} disabled={!folderId || !folderName || loading}>
+          Add
+        </Button>
       </DialogActions>
     </Dialog>
   );

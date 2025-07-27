@@ -1,14 +1,21 @@
-import React, { useState, useEffect } from 'react';
-import { Dialog, DialogTitle, DialogContent, DialogActions, Button, TextField } from '@mui/material';
-import { type MemoModalProps } from '../types';
-import { LOCAL_STORAGE_KEYS } from '../constants';
+import React, { useState, useEffect } from "react";
+import {
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Button,
+  TextField,
+} from "@mui/material";
+import { type MemoModalProps } from "../types";
+import { LOCAL_STORAGE_KEYS } from "../constants";
 
 /**
  * メモモーダルコンポーネント。
  * フォルダごとにメモを保存・表示します。
  */
 const MemoModal: React.FC<MemoModalProps> = ({ open, onClose, folderId, folderName }) => {
-  const [memoText, setMemoText] = useState('');
+  const [memoText, setMemoText] = useState("");
 
   // folderIdとopenの状態に基づいてメモを読み込む
   useEffect(() => {
@@ -18,7 +25,7 @@ const MemoModal: React.FC<MemoModalProps> = ({ open, onClose, folderId, folderNa
       if (savedMemo) {
         setMemoText(savedMemo);
       } else {
-        setMemoText(''); // フォルダにメモがない場合はクリア
+        setMemoText(""); // フォルダにメモがない場合はクリア
       }
     }
   }, [open, folderId]);
