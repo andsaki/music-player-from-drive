@@ -22,6 +22,8 @@ import {
 import MusicNoteIcon from "@mui/icons-material/MusicNote";
 import ShareIcon from "@mui/icons-material/Share";
 import CloseIcon from "@mui/icons-material/Close";
+import RepeatIcon from "@mui/icons-material/Repeat";
+import RepeatOneIcon from "@mui/icons-material/RepeatOne";
 import { useGoogleLogin } from "@react-oauth/google";
 import axios from "axios";
 import type { SelectChangeEvent } from "@mui/material/Select";
@@ -71,6 +73,8 @@ function App() {
   const [currentFilterFolderId, setCurrentFilterFolderId] = useState<string>("all");
   // audio要素への参照を保持するref
   const audioRef = useRef<HTMLAudioElement>(null);
+  // 再生モードを管理するstate
+  const [playMode, setPlayMode] = useState<"repeat-all" | "repeat-one" | "none">("repeat-all");
 
   // フォルダ管理モーダルの開閉状態を管理するstate
   const [openFolderManagement, setOpenFolderManagement] = useState(false);
@@ -225,12 +229,27 @@ function App() {
   };
 
   const handleAudioEnded = () => {
-    if (selectedFile) {
-      const currentIndex = musicFiles.findIndex((file) => file.id === selectedFile.id);
-      if (currentIndex !== -1 && currentIndex < musicFiles.length - 1) {
-        playMusic(musicFiles[currentIndex + 1]); // 次の曲を再生
-      }
+    if (!selectedFile || !audioRef.current) return;
+
+    const currentIndex = musicFiles.findIndex((file) => file.id === selectedFile.id);
+    if (currentIndex === -1) return;
+
+    if (playMode === "repeat-one") {
+      audioRef.current.currentTime = 0;
+      audioRef.current.play();
+    } else if (playMode === "repeat-all") {
+      const nextIndex = (currentIndex + 1) % musicFiles.length;
+      playMusic(musicFiles[nextIndex]);
     }
+    // 'none' の場合は何もしない
+  };
+
+  const togglePlayMode = () => {
+    setPlayMode((prevMode) => {
+      if (prevMode === "repeat-all") return "repeat-one";
+      if (prevMode === "repeat-one") return "none";
+      return "repeat-all";
+    });
   };
 
   return (
@@ -377,14 +396,20 @@ function App() {
             Now Playing: {selectedFile.name} {/* 現在再生中のファイル名を表示 */}
           </Typography>
         )}
-        {/* 曲の再生終了時に次の曲を自動再生するロジックを追加 */}
-        <audio
-          ref={audioRef}
-          controls
-          autoPlay
-          style={{ width: "100%", marginTop: "10px" }}
-          onEnded={handleAudioEnded}
-        />
+        <Box sx={{ display: "flex", alignItems: "center", width: "100%" }}>
+          <IconButton onClick={togglePlayMode} color="primary">
+            {playMode === "repeat-all" && <RepeatIcon />}
+            {playMode === "repeat-one" && <RepeatOneIcon />}
+            {playMode === "none" && <RepeatIcon color="disabled" />}
+          </IconButton>
+          <audio
+            ref={audioRef}
+            controls
+            autoPlay
+            style={{ flexGrow: 1, marginLeft: "10px" }}
+            onEnded={handleAudioEnded}
+          />
+        </Box>
       </Paper>
 
       {/* Snackbar for copy feedback */}
