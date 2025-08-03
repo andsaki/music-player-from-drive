@@ -13,8 +13,8 @@ export default defineConfig({
       },
       includeAssets: ["favicon.ico", "apple-touch-icon.png", "masked-icon.svg"],
       manifest: {
-        name: "GD-player",
-        short_name: "GD-player",
+                name: "GD-Player",
+        short_name: "GD-Player",
         description: "A music player that plays music from Google Drive",
         theme_color: "#ffffff",
         icons: [
