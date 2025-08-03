@@ -24,3 +24,9 @@ export interface MemoModalProps {
   folderId: string;
   folderName: string;
 }
+
+export interface Task {
+  id: string;
+  text: string;
+  completed: boolean;
+}
