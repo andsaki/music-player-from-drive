@@ -105,7 +105,7 @@ const MemoModal: React.FC<MemoModalProps> = ({ open, onClose, folderId, folderNa
   };
 
   return (
-    <Dialog open={open} onClose={handleClose} fullWidth maxWidth="sm">
+    <Dialog open={open} onClose={handleClose} fullWidth maxWidth="sm" disableEnforceFocus>
       <DialogTitle>Tasks for Folder: {folderName}</DialogTitle>
       <DialogContent>
         {/* デバッグ表示エリア - 現在のメモ */}
