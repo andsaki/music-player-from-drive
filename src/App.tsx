@@ -260,7 +260,7 @@ function App() {
         <Toolbar sx={{ gap: 2, mt: 0, mb: 0 }}>
           <MusicNoteIcon sx={{ mr: 2 }} />
           <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-            Music Player from Google Drive
+            Google Drive Player
           </Typography>
           {/* アクセストークンが存在する場合のみログアウトボタンを表示 */}
           {accessToken && (
