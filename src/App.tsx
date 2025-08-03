@@ -389,6 +389,7 @@ function App() {
           flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
+          backgroundColor: "#f5f5f5", // 薄いグレー
         }}
       >
         {selectedFile && (
