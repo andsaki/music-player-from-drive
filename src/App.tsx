@@ -384,16 +384,21 @@ function App() {
           bottom: 0,
           left: 0,
           right: 0,
-          p: 2,
+          p: 3, // パディングを増やしてフッターを大きくする
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
           backgroundColor: "#f5f5f5", // 薄いグレー
+          borderTop: "1px solid #e0e0e0", // フッターの上部に境界線を追加
         }}
       >
         {selectedFile && (
-          <Typography variant="subtitle1" component="div" sx={{ mb: 1 }}>
+          <Typography
+            variant="subtitle1"
+            component="div"
+            sx={{ mb: 2, wordBreak: "break-word" }} // wordBreakを追加
+          >
             Now Playing: {selectedFile.name} {/* 現在再生中のファイル名を表示 */}
           </Typography>
         )}
@@ -407,7 +412,7 @@ function App() {
             ref={audioRef}
             controls
             autoPlay
-            style={{ flexGrow: 1, marginLeft: "10px" }}
+            style={{ flexGrow: 1, marginLeft: "10px", margin: "10px 0" }} // 上下にマージンを追加
             onEnded={handleAudioEnded}
           />
         </Box>
