@@ -146,7 +146,8 @@ function App() {
             fields: "files(id, name, mimeType, modifiedTime, parents)", // 取得するフィールドを指定
           },
         });
-        allFiles.push(...(response.data.files || [])); 
+        allFiles.push(...(response.data.files || [])); // 取得したファイルをリストに追加
+      }
       // 最終更新日時で降順にソート（新しいものが先頭）
       allFiles.sort(
         (a, b) => new Date(b.modifiedTime).getTime() - new Date(a.modifiedTime).getTime(),
@@ -387,15 +388,11 @@ function App() {
           alignItems: "center",
           justifyContent: "center",
           backgroundColor: "#f5f5f5", // 薄いグレー
-          borderTop: "1px solid #e0e0e0", 
+          borderTop: "1px solid #e0e0e0",
         }}
       >
         {selectedFile && (
-          <Typography
-            variant="subtitle1"
-            component="div"
-            sx={{ mb: 2, wordBreak: "break-word" }}
-          >
+          <Typography variant="subtitle1" component="div" sx={{ mb: 2, wordBreak: "break-word" }}>
             Now Playing: {selectedFile.name} {/* 現在再生中のファイル名を表示 */}
           </Typography>
         )}
@@ -409,7 +406,7 @@ function App() {
             ref={audioRef}
             controls
             autoPlay
-            style={{ flexGrow: 1, marginLeft: "10px", margin: "10px 0" }} 
+            style={{ flexGrow: 1, marginLeft: "10px", margin: "10px 0" }}
             onEnded={handleAudioEnded}
           />
         </Box>
