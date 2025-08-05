@@ -26,7 +26,6 @@ import { type Task } from "../types";
 const MemoModal: React.FC<MemoModalProps> = ({ open, onClose, folderId, folderName }) => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [newTask, setNewTask] = useState("");
-  const [allLocalStorageData, setAllLocalStorageData] = useState<Record<string, string>>({});
 
   // folderIdとopenの状態に基づいてメモを読み込む
   useEffect(() => {
@@ -43,16 +42,6 @@ const MemoModal: React.FC<MemoModalProps> = ({ open, onClose, folderId, folderNa
       } else {
         setTasks([]); // フォルダにメモがない場合はクリア
       }
-
-      // 全てのローカルストレージデータを読み込む (デバッグ用)
-      const allData: Record<string, string> = {};
-      for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        if (key) {
-          allData[key] = localStorage.getItem(key) || "";
-        }
-      }
-      setAllLocalStorageData(allData);
     }
   }, [open, folderId]);
 
