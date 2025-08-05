@@ -12,8 +12,6 @@ import {
   Checkbox,
   IconButton,
   TextField,
-  Typography,
-  Box,
 } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
 import { type MemoModalProps } from "../types";
@@ -80,7 +78,7 @@ const MemoModal: React.FC<MemoModalProps> = ({ open, onClose, folderId, folderNa
 
   const handleToggleTask = (id: string) => {
     const newTasks = tasks.map((task) =>
-      task.id === id ? { ...task, completed: !task.completed } : task
+      task.id === id ? { ...task, completed: !task.completed } : task,
     );
     setTasks(newTasks);
     saveTasks(newTasks);
@@ -108,31 +106,6 @@ const MemoModal: React.FC<MemoModalProps> = ({ open, onClose, folderId, folderNa
     <Dialog open={open} onClose={handleClose} fullWidth maxWidth="sm" disableEnforceFocus>
       <DialogTitle>Tasks for Folder: {folderName}</DialogTitle>
       <DialogContent>
-        {/* デバッグ表示エリア - 現在のメモ */}
-        {open && folderId && (
-          <Typography variant="caption" display="block" gutterBottom>
-            Debug: Raw LocalStorage Memo for {folderName}:{" "}
-            {localStorage.getItem(`${LOCAL_STORAGE_KEYS.USER_MEMO_PREFIX}${folderId}`) || "No data"}
-          </Typography>
-        )}
-
-        {/* デバッグ表示エリア - 全てのローカルストレージ */}
-        {open && (
-          <Box sx={{ mt: 2, mb: 2, p: 1, border: '1px dashed grey', overflowWrap: 'break-word' }}>
-            <Typography variant="subtitle2" gutterBottom>
-              All LocalStorage Data:
-            </Typography>
-            {Object.keys(allLocalStorageData).length > 0 ? (
-              Object.entries(allLocalStorageData).map(([key, value]) => (
-                <Typography key={key} variant="caption" display="block">
-                  <strong>{key}:</strong> {value}
-                </Typography>
-              ))
-            ) : (
-              <Typography variant="caption">No LocalStorage data found.</Typography>
-            )}
-          </Box>
-        )}
         <TextField
           autoFocus
           margin="dense"
@@ -156,7 +129,11 @@ const MemoModal: React.FC<MemoModalProps> = ({ open, onClose, folderId, folderNa
             <ListItem
               key={task.id}
               secondaryAction={
-                <IconButton edge="end" aria-label="delete" onClick={() => handleDeleteTask(task.id)}>
+                <IconButton
+                  edge="end"
+                  aria-label="delete"
+                  onClick={() => handleDeleteTask(task.id)}
+                >
                   <DeleteIcon />
                 </IconButton>
               }
@@ -171,7 +148,13 @@ const MemoModal: React.FC<MemoModalProps> = ({ open, onClose, folderId, folderNa
                   onChange={() => handleToggleTask(task.id)}
                 />
               </ListItemIcon>
-              <ListItemText primary={task.text} sx={{ textDecoration: task.completed ? "line-through" : "none" }} />
+              <ListItemText
+                primary={task.text}
+                sx={{
+                  textDecoration: task.completed ? "line-through" : "none",
+                  mr: 5,
+                }}
+              />
             </ListItem>
           ))}
         </List>
