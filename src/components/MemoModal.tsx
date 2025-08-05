@@ -12,6 +12,7 @@ import {
   Checkbox,
   IconButton,
   TextField,
+  Divider,
 } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
 import { type MemoModalProps } from "../types";
@@ -85,9 +86,8 @@ const MemoModal: React.FC<MemoModalProps> = ({ open, onClose, folderId, folderNa
     onClose();
   };
 
-  // モーダルが閉じられたときにメモを保存する（CloseボタンでもSaveボタンでも）
+  // メモを保存せずにモーダルを閉じるハンドラ
   const handleClose = () => {
-    saveTasks(tasks);
     onClose();
   };
 
@@ -113,44 +113,50 @@ const MemoModal: React.FC<MemoModalProps> = ({ open, onClose, folderId, folderNa
         <Button onClick={handleAddTask} variant="contained" sx={{ mt: 2, mb: 2 }}>
           Add Task
         </Button>
+        <Divider />
         <List>
-          {tasks.map((task) => (
-            <ListItem
-              key={task.id}
-              secondaryAction={
-                <IconButton
-                  edge="end"
-                  aria-label="delete"
-                  onClick={() => handleDeleteTask(task.id)}
-                >
-                  <DeleteIcon />
-                </IconButton>
-              }
-              disablePadding
-            >
-              <ListItemIcon>
-                <Checkbox
-                  edge="start"
-                  checked={task.completed}
-                  tabIndex={-1}
-                  disableRipple
-                  onChange={() => handleToggleTask(task.id)}
+          {tasks.map((task, index) => (
+            <React.Fragment key={task.id}>
+              <ListItem
+                sx={{ my: 2 }} //上下にマージンを追加
+                secondaryAction={
+                  <IconButton
+                    edge="end"
+                    aria-label="delete"
+                    onClick={() => handleDeleteTask(task.id)}
+                  >
+                    <DeleteIcon />
+                  </IconButton>
+                }
+                disablePadding
+              >
+                <ListItemIcon>
+                  <Checkbox
+                    edge="start"
+                    checked={task.completed}
+                    tabIndex={-1}
+                    disableRipple
+                    onChange={() => handleToggleTask(task.id)}
+                  />
+                </ListItemIcon>
+                <ListItemText
+                  primary={task.text}
+                  sx={{
+                    textDecoration: task.completed ? "line-through" : "none",
+                    mr: 5,
+                  }}
                 />
-              </ListItemIcon>
-              <ListItemText
-                primary={task.text}
-                sx={{
-                  textDecoration: task.completed ? "line-through" : "none",
-                  mr: 5,
-                }}
-              />
-            </ListItem>
+              </ListItem>
+              {index < tasks.length - 1 && <Divider />}{/* 最後のタスク以外にDividerを追加 */}
+            </React.Fragment>
           ))}
         </List>
       </DialogContent>
       <DialogActions>
-        <Button onClick={handleClose}>Close</Button>
-        <Button onClick={handleSaveMemo}>Save</Button>
+        <Button onClick={handleClose}>Cancel</Button>
+        <Button onClick={handleSaveMemo} variant="contained">
+          Save
+        </Button>
       </DialogActions>
     </Dialog>
   );
