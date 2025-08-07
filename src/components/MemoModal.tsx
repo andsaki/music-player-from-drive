@@ -14,6 +14,7 @@ import {
   TextField,
   Divider,
 } from "@mui/material";
+import { motion, AnimatePresence } from "framer-motion";
 import DeleteIcon from "@mui/icons-material/Delete";
 import { type MemoModalProps } from "../types";
 import { LOCAL_STORAGE_KEYS } from "../constants";
@@ -57,8 +58,8 @@ const MemoModal: React.FC<MemoModalProps> = ({ open, onClose, folderId, folderNa
   const handleAddTask = () => {
     if (newTask.trim() !== "") {
       const newTasks = [
-        ...tasks,
         { id: Date.now().toString(), text: newTask.trim(), completed: false },
+        ...tasks,
       ];
       setTasks(newTasks);
       saveTasks(newTasks);
@@ -70,6 +71,7 @@ const MemoModal: React.FC<MemoModalProps> = ({ open, onClose, folderId, folderNa
     const newTasks = tasks.map((task) =>
       task.id === id ? { ...task, completed: !task.completed } : task,
     );
+    newTasks.sort((a, b) => Number(a.completed) - Number(b.completed));
     setTasks(newTasks);
     saveTasks(newTasks);
   };
@@ -115,41 +117,51 @@ const MemoModal: React.FC<MemoModalProps> = ({ open, onClose, folderId, folderNa
         </Button>
         <Divider />
         <List>
-          {tasks.map((task, index) => (
-            <React.Fragment key={task.id}>
-              <ListItem
-                sx={{ my: 2 }} //上下にマージンを追加
-                secondaryAction={
-                  <IconButton
+          <AnimatePresence>
+            {tasks.map((task, index) => (
+              <motion.div
+                key={task.id}
+                layout
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 10 }}
+                transition={{ duration: 0.3 }}
+              >
+                <ListItem
+                  sx={{ my: 2 }} //上下にマージンを追加
+                  secondaryAction={
+                    <IconButton
                     edge="end"
                     aria-label="delete"
                     onClick={() => handleDeleteTask(task.id)}
+                    sx={{ p: 0 }}
                   >
-                    <DeleteIcon />
-                  </IconButton>
-                }
-                disablePadding
-              >
-                <ListItemIcon>
-                  <Checkbox
-                    edge="start"
-                    checked={task.completed}
-                    tabIndex={-1}
-                    disableRipple
-                    onChange={() => handleToggleTask(task.id)}
+                      <DeleteIcon />
+                    </IconButton>
+                  }
+                  disablePadding
+                >
+                  <ListItemIcon>
+                    <Checkbox
+                      edge="start"
+                      checked={task.completed}
+                      tabIndex={-1}
+                      disableRipple
+                      onChange={() => handleToggleTask(task.id)}
+                    />
+                  </ListItemIcon>
+                  <ListItemText
+                    primary={task.text}
+                    sx={{
+                      textDecoration: task.completed ? "line-through" : "none",
+                      mr: 5,
+                    }}
                   />
-                </ListItemIcon>
-                <ListItemText
-                  primary={task.text}
-                  sx={{
-                    textDecoration: task.completed ? "line-through" : "none",
-                    mr: 5,
-                  }}
-                />
-              </ListItem>
-              {index < tasks.length - 1 && <Divider />}{/* 最後のタスク以外にDividerを追加 */}
-            </React.Fragment>
-          ))}
+                </ListItem>
+                {index < tasks.length - 1 && <Divider />}{/* 最後のタスク以外にDividerを追加 */}
+              </motion.div>
+            ))}
+          </AnimatePresence>
         </List>
       </DialogContent>
       <DialogActions>
