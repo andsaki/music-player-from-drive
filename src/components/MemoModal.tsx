@@ -128,7 +128,7 @@ const MemoModal: React.FC<MemoModalProps> = ({ open, onClose, folderId, folderNa
                 transition={{ duration: 0.3 }}
               >
                 <ListItem
-                  sx={{ my: 2 }} //上下にマージンを追加
+                  sx={{ my: 2 }}
                   secondaryAction={
                     <IconButton
                     edge="end"

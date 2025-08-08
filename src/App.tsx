@@ -344,12 +344,12 @@ function App() {
                       display: "flex",
                       justifyContent: "space-between",
                       alignItems: "center",
-                    }} // Flexboxで配置を調整
+                    }}
                   >
                     <ListItemText primary={file.name} />
                     <Box sx={{ display: "flex", alignItems: "center" }}>
                       {playingLoading && selectedFile?.id === file.id && (
-                        <CircularProgress size={20} sx={{ ml: 2 }} /> // 再生中のローディング表示
+                        <CircularProgress size={20} sx={{ ml: 2 }} />
                       )}
                       <IconButton
                         edge="end"
@@ -362,7 +362,7 @@ function App() {
                   </ListItemButton>
                 ))
               ) : (
-                <Typography>No music files found in your Google Drive.</Typography> // 音楽ファイルが見つからない場合のメッセージ
+                <Typography>No music files found in your Google Drive.</Typography>
               )}
             </List>
           )
@@ -382,18 +382,18 @@ function App() {
           bottom: 0,
           left: 0,
           right: 0,
-          p: 3, // パディングを増やしてフッターを大きくする
+          p: 3,
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
-          backgroundColor: "#f5f5f5", // 薄いグレー
+          backgroundColor: "#f5f5f5",
           borderTop: "1px solid #e0e0e0",
         }}
       >
         {selectedFile && (
           <Typography variant="subtitle1" component="div" sx={{ mb: 2, wordBreak: "break-word" }}>
-            Now Playing: {selectedFile.name} {/* 現在再生中のファイル名を表示 */}
+            Now Playing: {selectedFile.name}
           </Typography>
         )}
         <Box sx={{ display: "flex", alignItems: "center", width: "100%" }}>
