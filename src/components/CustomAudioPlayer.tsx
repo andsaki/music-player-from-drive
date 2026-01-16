@@ -33,6 +33,9 @@ export const CustomAudioPlayer: React.FC<CustomAudioPlayerProps> = ({
   const [volume, setVolume] = useState(1);
   const [isMuted, setIsMuted] = useState(false);
 
+  // iOSを検出（MSStreamはIE11のUser Agent判定用）
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !('MSStream' in window);
+
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
@@ -244,37 +247,53 @@ export const CustomAudioPlayer: React.FC<CustomAudioPlayerProps> = ({
           </IconButton>
 
           {/* 音量コントロール */}
-          <Box sx={{ display: 'flex', alignItems: 'center', minWidth: 150 }}>
-            <IconButton
-              onClick={toggleMute}
-              sx={{
-                color: '#fbf8cc',
-                '&:hover': { color: '#ffffff', transform: 'scale(1.1)' },
-                transition: 'all 0.3s ease',
-              }}
-            >
-              {isMuted ? <VolumeOffIcon /> : <VolumeUpIcon />}
-            </IconButton>
-            <Slider
-              value={isMuted ? 0 : volume}
-              max={1}
-              step={0.01}
-              onChange={handleVolumeChange}
-              sx={{
-                color: '#fbf8cc',
-                ml: 1,
-                '& .MuiSlider-thumb': {
-                  boxShadow: '0 0 10px rgba(251, 248, 204, 0.6)',
-                  '&:hover': {
-                    boxShadow: '0 0 15px rgba(251, 248, 204, 0.9)',
+          {!isIOS ? (
+            <Box sx={{ display: 'flex', alignItems: 'center', minWidth: 150 }}>
+              <IconButton
+                onClick={toggleMute}
+                sx={{
+                  color: '#fbf8cc',
+                  '&:hover': { color: '#ffffff', transform: 'scale(1.1)' },
+                  transition: 'all 0.3s ease',
+                }}
+              >
+                {isMuted ? <VolumeOffIcon /> : <VolumeUpIcon />}
+              </IconButton>
+              <Slider
+                value={isMuted ? 0 : volume}
+                max={1}
+                step={0.01}
+                onChange={handleVolumeChange}
+                sx={{
+                  color: '#fbf8cc',
+                  ml: 1,
+                  '& .MuiSlider-thumb': {
+                    boxShadow: '0 0 10px rgba(251, 248, 204, 0.6)',
+                    '&:hover': {
+                      boxShadow: '0 0 15px rgba(251, 248, 204, 0.9)',
+                    },
                   },
-                },
-                '& .MuiSlider-track': {
-                  boxShadow: '0 0 5px rgba(251, 248, 204, 0.4)',
-                },
-              }}
-            />
-          </Box>
+                  '& .MuiSlider-track': {
+                    boxShadow: '0 0 5px rgba(251, 248, 204, 0.4)',
+                  },
+                }}
+              />
+            </Box>
+          ) : (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <VolumeUpIcon sx={{ color: 'rgba(251, 248, 204, 0.5)', fontSize: 20 }} />
+              <Typography
+                variant="caption"
+                sx={{
+                  color: 'rgba(251, 248, 204, 0.7)',
+                  fontSize: '0.75rem',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                デバイスの音量ボタンを使用
+              </Typography>
+            </Box>
+          )}
         </Box>
       </Box>
     </Box>
