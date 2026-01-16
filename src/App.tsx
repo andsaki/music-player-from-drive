@@ -2,7 +2,6 @@ import { useState, useEffect, useRef } from "react";
 import {
   AppBar,
   Box,
-  Paper,
   CssBaseline,
   Toolbar,
   Typography,
@@ -22,13 +21,12 @@ import {
 import MusicNoteIcon from "@mui/icons-material/MusicNote";
 import ShareIcon from "@mui/icons-material/Share";
 import CloseIcon from "@mui/icons-material/Close";
-import RepeatIcon from "@mui/icons-material/Repeat";
-import RepeatOneIcon from "@mui/icons-material/RepeatOne";
 import { useGoogleLogin } from "@react-oauth/google";
 import axios from "axios";
 import type { SelectChangeEvent } from "@mui/material/Select";
 import FolderManagement from "./components/FolderManagement.tsx";
 import MemoModal from "./components/MemoModal.tsx";
+import { CustomAudioPlayer } from "./components/CustomAudioPlayer.tsx";
 import { type DriveFile, type FolderOption } from "./types";
 import { ALL_FOLDERS_OPTION, LOCAL_STORAGE_KEYS } from "./constants";
 import { generateShareLink, copyToClipboard } from "./utils";
@@ -252,6 +250,22 @@ function App() {
     });
   };
 
+  const handlePrevious = () => {
+    if (!selectedFile || musicFiles.length === 0) return;
+    const currentIndex = musicFiles.findIndex((file) => file.id === selectedFile.id);
+    if (currentIndex === -1) return;
+    const previousIndex = currentIndex === 0 ? musicFiles.length - 1 : currentIndex - 1;
+    playMusic(musicFiles[previousIndex]);
+  };
+
+  const handleNext = () => {
+    if (!selectedFile || musicFiles.length === 0) return;
+    const currentIndex = musicFiles.findIndex((file) => file.id === selectedFile.id);
+    if (currentIndex === -1) return;
+    const nextIndex = (currentIndex + 1) % musicFiles.length;
+    playMusic(musicFiles[nextIndex]);
+  };
+
   return (
     <Box sx={{ display: "flex", flexDirection: "column", height: "100vh" }}>
       <CssBaseline />
@@ -375,42 +389,16 @@ function App() {
         )}
       </Container>
 
-      {/* 音楽プレーヤーコントロール部分 */}
-      <Paper
-        sx={{
-          position: "fixed",
-          bottom: 0,
-          left: 0,
-          right: 0,
-          p: 3,
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
-          backgroundColor: "#f5f5f5",
-          borderTop: "1px solid #e0e0e0",
-        }}
-      >
-        {selectedFile && (
-          <Typography variant="subtitle1" component="div" sx={{ mb: 2, wordBreak: "break-word" }}>
-            Now Playing: {selectedFile.name}
-          </Typography>
-        )}
-        <Box sx={{ display: "flex", alignItems: "center", width: "100%" }}>
-          <IconButton onClick={togglePlayMode} color="primary">
-            {playMode === "repeat-all" && <RepeatIcon />}
-            {playMode === "repeat-one" && <RepeatOneIcon />}
-            {playMode === "none" && <RepeatIcon color="disabled" />}
-          </IconButton>
-          <audio
-            ref={audioRef}
-            controls
-            autoPlay
-            style={{ flexGrow: 1, marginLeft: "10px", margin: "10px 0" }}
-            onEnded={handleAudioEnded}
-          />
-        </Box>
-      </Paper>
+      {/* カスタムオーディオプレーヤー */}
+      <audio ref={audioRef} autoPlay onEnded={handleAudioEnded} style={{ display: "none" }} />
+      <CustomAudioPlayer
+        audioRef={audioRef}
+        selectedFile={selectedFile}
+        onPrevious={musicFiles.length > 1 ? handlePrevious : undefined}
+        onNext={musicFiles.length > 1 ? handleNext : undefined}
+        playMode={playMode}
+        onTogglePlayMode={togglePlayMode}
+      />
 
       {/* Snackbar for copy feedback */}
       <Snackbar
