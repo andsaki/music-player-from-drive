@@ -463,7 +463,7 @@ function App() {
                   letterSpacing: "0.1em",
                 }}
               >
-                Stream Your Music from Google Drive
+                Google Driveの音楽をストリーミング
               </Typography>
             </motion.div>
 
@@ -482,8 +482,8 @@ function App() {
                   lineHeight: 1.8,
                 }}
               >
-                Access your music library stored in Google Drive with a sleek, retro-futuristic
-                interface. Play, organize, and enjoy your favorite tracks anywhere.
+                Google Driveに保存された音楽ライブラリに、レトロフューチャーな
+                インターフェースでアクセス。どこでもお気に入りの曲を再生、整理、楽しめます。
               </Typography>
             </motion.div>
 
@@ -504,7 +504,6 @@ function App() {
                   py: 2,
                   fontSize: "1.1rem",
                   fontWeight: 700,
-                  fontFamily: "Orbitron, sans-serif",
                   background: "linear-gradient(135deg, #ff006e 0%, #ff4d9f 100%)",
                   boxShadow: "0 0 30px rgba(255, 0, 110, 0.6), 0 8px 20px rgba(0, 0, 0, 0.3)",
                   border: "2px solid rgba(255, 0, 110, 0.3)",
@@ -515,7 +514,7 @@ function App() {
                   },
                 }}
               >
-                Login with Google
+                Googleでログイン
               </Button>
             </motion.div>
 
