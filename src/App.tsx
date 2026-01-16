@@ -6,8 +6,6 @@ import {
   Toolbar,
   Typography,
   Container,
-  List,
-  ListItemText,
   Button,
   CircularProgress,
   Select,
@@ -16,14 +14,14 @@ import {
   InputLabel,
   Snackbar,
   IconButton,
-  ListItemButton,
 } from "@mui/material";
 import MusicNoteIcon from "@mui/icons-material/MusicNote";
 import ShareIcon from "@mui/icons-material/Share";
 import CloseIcon from "@mui/icons-material/Close";
 import CloudIcon from "@mui/icons-material/Cloud";
+import PlayArrowIcon from "@mui/icons-material/PlayArrow";
 import { useGoogleLogin } from "@react-oauth/google";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import axios from "axios";
 import type { SelectChangeEvent } from "@mui/material/Select";
 import FolderManagement from "./components/FolderManagement.tsx";
@@ -299,18 +297,56 @@ function App() {
           position: "relative",
         }}
       >
-        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 2 }}>
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            mb: 3,
+            mt: 2,
+          }}
+        >
           {/* アクセストークンが存在する場合のみフォルダフィルタリングのドロップダウンとフォルダ追加ボタンを表示 */}
           {accessToken && (
-            <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-              <FormControl variant="standard" sx={{ m: 1, minWidth: 120 }}>
-                <InputLabel id="filter-folder-label">Filter Folder</InputLabel>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
+              <FormControl
+                variant="standard"
+                sx={{
+                  minWidth: 200,
+                  "& .MuiInputLabel-root": {
+                    color: "#00f5d4",
+                    "&.Mui-focused": {
+                      color: "#33f7de",
+                    },
+                  },
+                  "& .MuiInput-underline:before": {
+                    borderBottomColor: "rgba(0, 245, 212, 0.3)",
+                  },
+                  "& .MuiInput-underline:hover:before": {
+                    borderBottomColor: "rgba(0, 245, 212, 0.5)",
+                  },
+                  "& .MuiInput-underline:after": {
+                    borderBottomColor: "#00f5d4",
+                    boxShadow: "0 2px 10px rgba(0, 245, 212, 0.4)",
+                  },
+                  "& .MuiSelect-select": {
+                    color: "#fff",
+                    fontWeight: 500,
+                  },
+                }}
+              >
+                <InputLabel id="filter-folder-label">フォルダを選択</InputLabel>
                 <Select
                   labelId="filter-folder-label"
                   id="filter-folder-select"
                   value={currentFilterFolderId}
                   onChange={handleFilterFolderChange}
-                  label="Filter Folder"
+                  label="フォルダを選択"
+                  sx={{
+                    "& .MuiSvgIcon-root": {
+                      color: "#00f5d4",
+                    },
+                  }}
                 >
                   {folderOptions.map((option: FolderOption) => (
                     <MenuItem key={option.id} value={option.id}>
@@ -320,12 +356,46 @@ function App() {
                 </Select>
               </FormControl>
               {currentFilterFolderId === "all" ? (
-                <Button variant="outlined" onClick={() => setOpenFolderManagement(true)}>
-                  Add Folder
+                <Button
+                  variant="outlined"
+                  onClick={() => setOpenFolderManagement(true)}
+                  sx={{
+                    borderColor: "#00f5d4",
+                    color: "#00f5d4",
+                    fontWeight: 600,
+                    px: 3,
+                    boxShadow: "0 0 10px rgba(0, 245, 212, 0.3)",
+                    "&:hover": {
+                      borderColor: "#33f7de",
+                      backgroundColor: "rgba(0, 245, 212, 0.1)",
+                      boxShadow: "0 0 20px rgba(0, 245, 212, 0.5)",
+                      transform: "translateY(-2px)",
+                    },
+                    transition: "all 0.3s ease",
+                  }}
+                >
+                  フォルダを追加
                 </Button>
               ) : (
-                <Button variant="outlined" onClick={() => setOpenMemoModal(true)}>
-                  Memo
+                <Button
+                  variant="outlined"
+                  onClick={() => setOpenMemoModal(true)}
+                  sx={{
+                    borderColor: "#fbf8cc",
+                    color: "#fbf8cc",
+                    fontWeight: 600,
+                    px: 3,
+                    boxShadow: "0 0 10px rgba(251, 248, 204, 0.3)",
+                    "&:hover": {
+                      borderColor: "#ffffff",
+                      backgroundColor: "rgba(251, 248, 204, 0.1)",
+                      boxShadow: "0 0 20px rgba(251, 248, 204, 0.5)",
+                      transform: "translateY(-2px)",
+                    },
+                    transition: "all 0.3s ease",
+                  }}
+                >
+                  メモ
                 </Button>
               )}
             </Box>
@@ -352,42 +422,222 @@ function App() {
         {/* アクセストークンが存在する場合の表示ロジック */}
         {accessToken ? (
           loading ? (
-            <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
-              <CircularProgress /> {/* ローディング中の表示 */}
+            <Box
+              component={motion.div}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              sx={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                mt: 8,
+              }}
+            >
+              <CircularProgress
+                size={60}
+                sx={{
+                  color: "#ff006e",
+                  "& .MuiCircularProgress-circle": {
+                    strokeLinecap: "round",
+                  },
+                }}
+              />
+              <Typography
+                sx={{
+                  mt: 3,
+                  color: "#00f5d4",
+                  fontFamily: "Orbitron, sans-serif",
+                  fontSize: "1.1rem",
+                  letterSpacing: "0.1em",
+                }}
+              >
+                Loading...
+              </Typography>
             </Box>
           ) : (
-            <List>
+            <Box sx={{ mt: 3 }}>
               {musicFiles.length > 0 ? (
-                musicFiles.map((file) => (
-                  <ListItemButton
-                    key={file.id}
-                    onClick={() => playMusic(file)}
+                <AnimatePresence>
+                  {musicFiles.map((file, index) => {
+                    const isPlaying = selectedFile?.id === file.id;
+                    return (
+                      <motion.div
+                        key={file.id}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -20 }}
+                        transition={{ delay: index * 0.05, duration: 0.3 }}
+                      >
+                        <Box
+                          onClick={() => playMusic(file)}
+                          sx={{
+                            mb: 2,
+                            p: 2,
+                            borderRadius: "12px",
+                            background: isPlaying
+                              ? "linear-gradient(135deg, rgba(255, 0, 110, 0.15), rgba(0, 245, 212, 0.1))"
+                              : "rgba(42, 10, 77, 0.6)",
+                            border: isPlaying
+                              ? "2px solid"
+                              : "1px solid rgba(255, 0, 110, 0.2)",
+                            borderImage: isPlaying
+                              ? "linear-gradient(90deg, #ff006e, #00f5d4) 1"
+                              : "none",
+                            boxShadow: isPlaying
+                              ? "0 0 20px rgba(255, 0, 110, 0.4), 0 0 40px rgba(0, 245, 212, 0.2)"
+                              : "0 2px 8px rgba(0, 0, 0, 0.3)",
+                            cursor: "pointer",
+                            transition: "all 0.3s ease",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "space-between",
+                            backdropFilter: "blur(10px)",
+                            position: "relative",
+                            overflow: "hidden",
+                            "&:hover": {
+                              transform: "translateX(8px)",
+                              boxShadow: "0 4px 20px rgba(255, 0, 110, 0.5), 0 0 30px rgba(0, 245, 212, 0.3)",
+                              border: "1px solid rgba(255, 0, 110, 0.5)",
+                              background: isPlaying
+                                ? "linear-gradient(135deg, rgba(255, 0, 110, 0.2), rgba(0, 245, 212, 0.15))"
+                                : "rgba(42, 10, 77, 0.8)",
+                            },
+                            "&::before": isPlaying
+                              ? {
+                                  content: '""',
+                                  position: "absolute",
+                                  left: 0,
+                                  top: 0,
+                                  bottom: 0,
+                                  width: "4px",
+                                  background: "linear-gradient(180deg, #ff006e, #00f5d4)",
+                                  boxShadow: "0 0 10px rgba(255, 0, 110, 0.8)",
+                                }
+                              : {},
+                          }}
+                        >
+                          <Box sx={{ display: "flex", alignItems: "center", flex: 1, minWidth: 0 }}>
+                            <Box
+                              sx={{
+                                mr: 2,
+                                width: 48,
+                                height: 48,
+                                borderRadius: "8px",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                background: isPlaying
+                                  ? "linear-gradient(135deg, #ff006e, #ff4d9f)"
+                                  : "rgba(255, 0, 110, 0.2)",
+                                boxShadow: isPlaying
+                                  ? "0 0 15px rgba(255, 0, 110, 0.6)"
+                                  : "none",
+                                transition: "all 0.3s ease",
+                              }}
+                            >
+                              {isPlaying ? (
+                                <motion.div
+                                  animate={{ scale: [1, 1.2, 1] }}
+                                  transition={{ repeat: Infinity, duration: 1.5 }}
+                                >
+                                  <PlayArrowIcon sx={{ color: "#fff" }} />
+                                </motion.div>
+                              ) : (
+                                <MusicNoteIcon sx={{ color: "#ff006e" }} />
+                              )}
+                            </Box>
+                            <Box sx={{ flex: 1, minWidth: 0 }}>
+                              <Typography
+                                sx={{
+                                  fontWeight: isPlaying ? 600 : 400,
+                                  fontSize: "1rem",
+                                  color: isPlaying ? "#00f5d4" : "text.primary",
+                                  overflow: "hidden",
+                                  textOverflow: "ellipsis",
+                                  whiteSpace: "nowrap",
+                                  textShadow: isPlaying ? "0 0 10px rgba(0, 245, 212, 0.5)" : "none",
+                                }}
+                              >
+                                {file.name}
+                              </Typography>
+                            </Box>
+                          </Box>
+                          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                            {playingLoading && selectedFile?.id === file.id && (
+                              <CircularProgress
+                                size={20}
+                                sx={{
+                                  color: "#ff006e",
+                                  "& .MuiCircularProgress-circle": {
+                                    strokeLinecap: "round",
+                                  },
+                                }}
+                              />
+                            )}
+                            <IconButton
+                              onClick={(e) => handleShareClick(e, file.id)}
+                              sx={{
+                                color: "#00f5d4",
+                                transition: "all 0.3s ease",
+                                "&:hover": {
+                                  color: "#33f7de",
+                                  transform: "scale(1.1) rotate(10deg)",
+                                  background: "rgba(0, 245, 212, 0.1)",
+                                },
+                              }}
+                            >
+                              <ShareIcon />
+                            </IconButton>
+                          </Box>
+                        </Box>
+                      </motion.div>
+                    );
+                  })}
+                </AnimatePresence>
+              ) : (
+                <Box
+                  component={motion.div}
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  sx={{
+                    textAlign: "center",
+                    py: 8,
+                    px: 4,
+                    borderRadius: "16px",
+                    background: "rgba(42, 10, 77, 0.4)",
+                    border: "1px dashed rgba(255, 0, 110, 0.3)",
+                  }}
+                >
+                  <MusicNoteIcon
                     sx={{
-                      mb: 1,
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
+                      fontSize: 80,
+                      color: "rgba(255, 0, 110, 0.3)",
+                      mb: 2,
+                    }}
+                  />
+                  <Typography
+                    variant="h6"
+                    sx={{
+                      color: "text.secondary",
+                      fontFamily: "Inter, sans-serif",
                     }}
                   >
-                    <ListItemText primary={file.name} />
-                    <Box sx={{ display: "flex", alignItems: "center" }}>
-                      {playingLoading && selectedFile?.id === file.id && (
-                        <CircularProgress size={20} sx={{ ml: 2 }} />
-                      )}
-                      <IconButton
-                        edge="end"
-                        aria-label="share"
-                        onClick={(e) => handleShareClick(e, file.id)}
-                      >
-                        <ShareIcon />
-                      </IconButton>
-                    </Box>
-                  </ListItemButton>
-                ))
-              ) : (
-                <Typography>No music files found in your Google Drive.</Typography>
+                    音楽ファイルが見つかりませんでした
+                  </Typography>
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      color: "text.secondary",
+                      mt: 1,
+                      opacity: 0.7,
+                    }}
+                  >
+                    Google Driveに音楽ファイルを追加してください
+                  </Typography>
+                </Box>
               )}
-            </List>
+            </Box>
           )
         ) : (
           <Box
