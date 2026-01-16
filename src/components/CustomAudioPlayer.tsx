@@ -11,7 +11,7 @@ import RepeatOneIcon from '@mui/icons-material/RepeatOne';
 import { motion } from 'framer-motion';
 
 interface CustomAudioPlayerProps {
-  audioRef: React.RefObject<HTMLAudioElement>;
+  audioRef: React.RefObject<HTMLAudioElement | null>;
   selectedFile: { id: string; name: string } | null;
   onPrevious?: () => void;
   onNext?: () => void;

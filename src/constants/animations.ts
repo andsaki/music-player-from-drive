@@ -1,4 +1,4 @@
-import { Variants } from 'framer-motion';
+import type { Variants } from 'framer-motion';
 
 // 共通トランジション設定
 export const TRANSITIONS = {
