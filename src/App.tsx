@@ -21,7 +21,9 @@ import {
 import MusicNoteIcon from "@mui/icons-material/MusicNote";
 import ShareIcon from "@mui/icons-material/Share";
 import CloseIcon from "@mui/icons-material/Close";
+import CloudIcon from "@mui/icons-material/Cloud";
 import { useGoogleLogin } from "@react-oauth/google";
+import { motion } from "framer-motion";
 import axios from "axios";
 import type { SelectChangeEvent } from "@mui/material/Select";
 import FolderManagement from "./components/FolderManagement.tsx";
@@ -288,7 +290,14 @@ function App() {
       {/* メインコンテンツエリア */}
       <Container
         component="main"
-        sx={{ mt: 0, mb: 2, flexGrow: 1, overflowY: "auto", paddingBottom: "120px" }}
+        sx={{
+          mt: 0,
+          mb: 2,
+          flexGrow: 1,
+          overflowY: "auto",
+          paddingBottom: "120px",
+          position: "relative",
+        }}
       >
         <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 2 }}>
           {/* アクセストークンが存在する場合のみフォルダフィルタリングのドロップダウンとフォルダ追加ボタンを表示 */}
@@ -381,10 +390,164 @@ function App() {
             </List>
           )
         ) : (
-          <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
-            <Button variant="contained" onClick={() => login()}>
-              Login with Google
-            </Button>
+          <Box
+            component={motion.div}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+            sx={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              minHeight: "60vh",
+              textAlign: "center",
+              px: 2,
+            }}
+          >
+            {/* メインタイトル */}
+            <motion.div
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ delay: 0.2, duration: 0.6 }}
+            >
+              <CloudIcon
+                sx={{
+                  fontSize: 120,
+                  mb: 3,
+                  background: "linear-gradient(135deg, #ff006e, #00f5d4)",
+                  backgroundClip: "text",
+                  WebkitBackgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                  filter: "drop-shadow(0 0 20px rgba(255, 0, 110, 0.6))",
+                }}
+              />
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4, duration: 0.6 }}
+            >
+              <Typography
+                variant="h2"
+                sx={{
+                  fontFamily: "Orbitron, sans-serif",
+                  fontWeight: 900,
+                  mb: 2,
+                  background: "linear-gradient(90deg, #ff006e, #00f5d4, #fbf8cc)",
+                  backgroundClip: "text",
+                  WebkitBackgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                  fontSize: { xs: "2.5rem", sm: "3.5rem", md: "4rem" },
+                  textShadow: "0 0 40px rgba(255, 0, 110, 0.5)",
+                }}
+              >
+                GD-Player
+              </Typography>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.6, duration: 0.6 }}
+            >
+              <Typography
+                variant="h5"
+                sx={{
+                  mb: 4,
+                  color: "#00f5d4",
+                  fontFamily: "Inter, sans-serif",
+                  fontWeight: 300,
+                  fontSize: { xs: "1rem", sm: "1.25rem", md: "1.5rem" },
+                  letterSpacing: "0.1em",
+                }}
+              >
+                Stream Your Music from Google Drive
+              </Typography>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.8, duration: 0.6 }}
+            >
+              <Typography
+                variant="body1"
+                sx={{
+                  mb: 6,
+                  color: "text.secondary",
+                  maxWidth: "600px",
+                  fontSize: { xs: "0.875rem", sm: "1rem" },
+                  lineHeight: 1.8,
+                }}
+              >
+                Access your music library stored in Google Drive with a sleek, retro-futuristic
+                interface. Play, organize, and enjoy your favorite tracks anywhere.
+              </Typography>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 1, duration: 0.5 }}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <Button
+                variant="contained"
+                size="large"
+                onClick={() => login()}
+                startIcon={<CloudIcon />}
+                sx={{
+                  px: 6,
+                  py: 2,
+                  fontSize: "1.1rem",
+                  fontWeight: 700,
+                  fontFamily: "Orbitron, sans-serif",
+                  background: "linear-gradient(135deg, #ff006e 0%, #ff4d9f 100%)",
+                  boxShadow: "0 0 30px rgba(255, 0, 110, 0.6), 0 8px 20px rgba(0, 0, 0, 0.3)",
+                  border: "2px solid rgba(255, 0, 110, 0.3)",
+                  "&:hover": {
+                    background: "linear-gradient(135deg, #ff4d9f 0%, #ff006e 100%)",
+                    boxShadow: "0 0 50px rgba(255, 0, 110, 0.9), 0 12px 30px rgba(0, 0, 0, 0.4)",
+                    border: "2px solid rgba(255, 0, 110, 0.6)",
+                  },
+                }}
+              >
+                Login with Google
+              </Button>
+            </motion.div>
+
+            {/* 装飾的な要素 */}
+            <Box
+              sx={{
+                position: "absolute",
+                top: "20%",
+                left: "10%",
+                width: "300px",
+                height: "300px",
+                borderRadius: "50%",
+                background: "radial-gradient(circle, rgba(255, 0, 110, 0.1) 0%, transparent 70%)",
+                filter: "blur(60px)",
+                pointerEvents: "none",
+                zIndex: -1,
+              }}
+            />
+            <Box
+              sx={{
+                position: "absolute",
+                bottom: "10%",
+                right: "10%",
+                width: "400px",
+                height: "400px",
+                borderRadius: "50%",
+                background: "radial-gradient(circle, rgba(0, 245, 212, 0.1) 0%, transparent 70%)",
+                filter: "blur(80px)",
+                pointerEvents: "none",
+                zIndex: -1,
+              }}
+            />
           </Box>
         )}
       </Container>
