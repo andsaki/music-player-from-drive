@@ -17,6 +17,7 @@ interface CustomAudioPlayerProps {
   onNext?: () => void;
   playMode: "repeat-all" | "repeat-one" | "none";
   onTogglePlayMode: () => void;
+  isLoading?: boolean;
 }
 
 export const CustomAudioPlayer: React.FC<CustomAudioPlayerProps> = ({
@@ -26,6 +27,7 @@ export const CustomAudioPlayer: React.FC<CustomAudioPlayerProps> = ({
   onNext,
   playMode,
   onTogglePlayMode,
+  isLoading = false,
 }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
@@ -110,7 +112,24 @@ export const CustomAudioPlayer: React.FC<CustomAudioPlayerProps> = ({
     <Box
       component={motion.div}
       initial={{ opacity: 0, y: 50 }}
-      animate={{ opacity: 1, y: 0 }}
+      animate={{
+        opacity: 1,
+        y: 0,
+        boxShadow: isLoading
+          ? [
+              '0 -4px 30px rgba(255, 0, 110, 0.4)',
+              '0 -4px 40px rgba(255, 0, 110, 0.6), 0 -8px 60px rgba(0, 245, 212, 0.4)',
+              '0 -4px 30px rgba(255, 0, 110, 0.4)',
+            ]
+          : '0 -4px 30px rgba(255, 0, 110, 0.4)',
+      }}
+      transition={{
+        boxShadow: {
+          duration: 1.5,
+          repeat: isLoading ? Infinity : 0,
+          ease: "easeInOut",
+        }
+      }}
       sx={{
         position: 'fixed',
         bottom: 0,
@@ -120,13 +139,23 @@ export const CustomAudioPlayer: React.FC<CustomAudioPlayerProps> = ({
         backdropFilter: 'blur(10px)',
         borderTop: '2px solid',
         borderImage: 'linear-gradient(90deg, #ff006e, #00f5d4, #fbf8cc) 1',
-        boxShadow: '0 -4px 30px rgba(255, 0, 110, 0.4)',
         p: 3,
         zIndex: 1100,
       }}
     >
       <Typography
         variant="h6"
+        component={motion.div}
+        animate={isLoading ? {
+          opacity: [0.5, 1, 0.5],
+        } : {
+          opacity: 1,
+        }}
+        transition={{
+          duration: 1.5,
+          repeat: isLoading ? Infinity : 0,
+          ease: "easeInOut",
+        }}
         sx={{
           mb: 2,
           textAlign: 'center',
@@ -139,6 +168,8 @@ export const CustomAudioPlayer: React.FC<CustomAudioPlayerProps> = ({
           overflow: 'hidden',
           textOverflow: 'ellipsis',
           whiteSpace: 'nowrap',
+          filter: isLoading ? 'blur(1px)' : 'blur(0)',
+          transition: 'filter 0.3s ease',
         }}
       >
         {selectedFile.name}

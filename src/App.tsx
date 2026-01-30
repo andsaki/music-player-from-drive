@@ -27,6 +27,7 @@ import type { SelectChangeEvent } from "@mui/material/Select";
 import FolderManagement from "./components/FolderManagement.tsx";
 import MemoModal from "./components/MemoModal.tsx";
 import { CustomAudioPlayer } from "./components/CustomAudioPlayer.tsx";
+import { MusicListSkeleton, TrackSwitchingIndicator } from "./components/SkeletonScreen.tsx";
 import { type DriveFile, type FolderOption } from "./types";
 import { ALL_FOLDERS_OPTION, LOCAL_STORAGE_KEYS } from "./constants";
 import { generateShareLink, copyToClipboard } from "./utils";
@@ -67,6 +68,8 @@ function App() {
   const [loading, setLoading] = useState<boolean>(false);
   // 音楽再生中のローディング状態を管理するstate
   const [playingLoading, setPlayingLoading] = useState<boolean>(false);
+  // フォルダ切り替え中のトランジション状態を管理するstate
+  const [isTransitioning, setIsTransitioning] = useState<boolean>(false);
   // 現在選択されているフィルタリングフォルダのIDを管理するstate（初期値は「全て」）
   const [currentFilterFolderId, setCurrentFilterFolderId] = useState<string>("all");
   // audio要素への参照を保持するref
@@ -114,14 +117,25 @@ function App() {
   };
 
   // フォルダフィルタリングの変更ハンドラ
-  const handleFilterFolderChange = (event: SelectChangeEvent<string>) => {
-    setCurrentFilterFolderId(event.target.value); // 選択されたフォルダIDを更新
-    setSelectedFile(null); // 選択中のファイルをクリア
-    setPlayingLoading(false); // 再生ローディング状態をリセット
+  const handleFilterFolderChange = async (event: SelectChangeEvent<string>) => {
+    // 音楽を停止
+    setSelectedFile(null);
+    setPlayingLoading(false);
     if (audioRef.current) {
-      audioRef.current.pause(); // 再生中の音楽を停止
-      audioRef.current.src = ""; // audioソースをクリア
+      audioRef.current.pause();
+      audioRef.current.src = "";
     }
+
+    // トランジション開始
+    setIsTransitioning(true);
+
+    // 少し待ってからフォルダ切り替え
+    await new Promise(resolve => setTimeout(resolve, 150));
+    setCurrentFilterFolderId(event.target.value);
+
+    // トランジション完了
+    await new Promise(resolve => setTimeout(resolve, 200));
+    setIsTransitioning(false);
   };
 
   // 音楽ファイルをフェッチする関数
