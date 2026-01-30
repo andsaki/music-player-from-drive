@@ -437,7 +437,7 @@ function App() {
           loading ? (
             <RetroLoadingSpinner />
           ) : isTransitioning ? (
-            <MusicListSkeleton count={5} />
+            <MusicListSkeleton count={8} />
           ) : (
             <Box sx={{ mt: 3 }}>
               {musicFiles.length > 0 ? (

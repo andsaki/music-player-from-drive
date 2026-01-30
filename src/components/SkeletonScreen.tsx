@@ -16,7 +16,7 @@ interface MusicListSkeletonProps {
  */
 export const MusicListSkeleton: React.FC<MusicListSkeletonProps> = ({ count = 5 }) => {
   return (
-    <Box sx={{ mt: 3 }}>
+    <Box sx={{ mt: 3, minHeight: "60vh" }}>
       {Array.from({ length: count }).map((_, index) => (
         <motion.div
           key={index}
