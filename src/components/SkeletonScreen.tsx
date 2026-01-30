@@ -1,4 +1,5 @@
 import { Box, Skeleton } from "@mui/material";
+import { motion } from "framer-motion";
 
 /**
  * レトロフューチャーなデザインのスケルトンスクリーンコンポーネント
@@ -17,14 +18,14 @@ export const MusicListSkeleton: React.FC<MusicListSkeletonProps> = ({ count = 5 
   return (
     <Box sx={{ mt: 3, minHeight: "60vh" }}>
       {Array.from({ length: count }).map((_, index) => (
-        <Box
+        <motion.div
           key={index}
-          sx={{
-            animation: "fadeIn 0.15s ease-out",
-            "@keyframes fadeIn": {
-              from: { opacity: 0 },
-              to: { opacity: 1 },
-            },
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{
+            duration: 0.15,
+            ease: "easeOut",
           }}
         >
           <Box
@@ -112,7 +113,7 @@ export const MusicListSkeleton: React.FC<MusicListSkeletonProps> = ({ count = 5 
               }}
             />
           </Box>
-        </Box>
+        </motion.div>
       ))}
     </Box>
   );
@@ -125,6 +126,10 @@ export const MusicListSkeleton: React.FC<MusicListSkeletonProps> = ({ count = 5 
 export const TrackSwitchingIndicator: React.FC = () => {
   return (
     <Box
+      component={motion.div}
+      initial={{ scale: 0.8, opacity: 0 }}
+      animate={{ scale: 1, opacity: 1 }}
+      exit={{ scale: 0.8, opacity: 0 }}
       sx={{
         width: 20,
         height: 20,
@@ -148,17 +153,15 @@ export const TrackSwitchingIndicator: React.FC = () => {
 export const RetroLoadingSpinner: React.FC<{ size?: number }> = ({ size = 60 }) => {
   return (
     <Box
+      component={motion.div}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
       sx={{
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
         justifyContent: "center",
         mt: 8,
-        animation: "fadeIn 0.15s ease-out",
-        "@keyframes fadeIn": {
-          from: { opacity: 0 },
-          to: { opacity: 1 },
-        },
       }}
     >
       <Box
@@ -208,6 +211,15 @@ export const RetroLoadingSpinner: React.FC<{ size?: number }> = ({ size = 60 }) 
         }}
       />
       <Box
+        component={motion.div}
+        animate={{
+          opacity: [0.5, 1, 0.5],
+        }}
+        transition={{
+          duration: 2,
+          repeat: Infinity,
+          ease: "easeInOut",
+        }}
         sx={{
           mt: 3,
           color: "#00f5d4",
@@ -215,11 +227,6 @@ export const RetroLoadingSpinner: React.FC<{ size?: number }> = ({ size = 60 }) 
           fontSize: "1.1rem",
           letterSpacing: "0.1em",
           textShadow: "0 0 10px rgba(0, 245, 212, 0.5)",
-          animation: "opacityPulse 2s ease-in-out infinite",
-          "@keyframes opacityPulse": {
-            "0%, 100%": { opacity: 0.5 },
-            "50%": { opacity: 1 },
-          },
         }}
       >
         Loading...
