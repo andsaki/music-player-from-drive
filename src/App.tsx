@@ -7,7 +7,6 @@ import {
   Typography,
   Container,
   Button,
-  CircularProgress,
   Select,
   MenuItem,
   FormControl,
@@ -27,7 +26,7 @@ import type { SelectChangeEvent } from "@mui/material/Select";
 import FolderManagement from "./components/FolderManagement.tsx";
 import MemoModal from "./components/MemoModal.tsx";
 import { CustomAudioPlayer } from "./components/CustomAudioPlayer.tsx";
-import { MusicListSkeleton, TrackSwitchingIndicator } from "./components/SkeletonScreen.tsx";
+import { MusicListSkeleton, TrackSwitchingIndicator, RetroLoadingSpinner } from "./components/SkeletonScreen.tsx";
 import { type DriveFile, type FolderOption } from "./types";
 import { ALL_FOLDERS_OPTION, LOCAL_STORAGE_KEYS } from "./constants";
 import { generateShareLink, copyToClipboard } from "./utils";
@@ -436,39 +435,9 @@ function App() {
         {/* アクセストークンが存在する場合の表示ロジック */}
         {accessToken ? (
           loading ? (
-            <Box
-              component={motion.div}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              sx={{
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                justifyContent: "center",
-                mt: 8,
-              }}
-            >
-              <CircularProgress
-                size={60}
-                sx={{
-                  color: "#ff006e",
-                  "& .MuiCircularProgress-circle": {
-                    strokeLinecap: "round",
-                  },
-                }}
-              />
-              <Typography
-                sx={{
-                  mt: 3,
-                  color: "#00f5d4",
-                  fontFamily: "Orbitron, sans-serif",
-                  fontSize: "1.1rem",
-                  letterSpacing: "0.1em",
-                }}
-              >
-                Loading...
-              </Typography>
-            </Box>
+            <RetroLoadingSpinner />
+          ) : isTransitioning ? (
+            <MusicListSkeleton count={5} />
           ) : (
             <Box sx={{ mt: 3 }}>
               {musicFiles.length > 0 ? (
@@ -579,15 +548,7 @@ function App() {
                           </Box>
                           <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                             {playingLoading && selectedFile?.id === file.id && (
-                              <CircularProgress
-                                size={20}
-                                sx={{
-                                  color: "#ff006e",
-                                  "& .MuiCircularProgress-circle": {
-                                    strokeLinecap: "round",
-                                  },
-                                }}
-                              />
+                              <TrackSwitchingIndicator />
                             )}
                             <IconButton
                               onClick={(e) => handleShareClick(e, file.id)}
@@ -824,6 +785,7 @@ function App() {
         onNext={musicFiles.length > 1 ? handleNext : undefined}
         playMode={playMode}
         onTogglePlayMode={togglePlayMode}
+        isLoading={playingLoading}
       />
 
       {/* Snackbar for copy feedback */}
