@@ -442,15 +442,15 @@ function App() {
             <Box sx={{ mt: 3 }}>
               {musicFiles.length > 0 ? (
                 <AnimatePresence>
-                  {musicFiles.map((file, index) => {
+                  {musicFiles.map((file) => {
                     const isPlaying = selectedFile?.id === file.id;
                     return (
                       <motion.div
                         key={file.id}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -20 }}
-                        transition={{ delay: index * 0.05, duration: 0.3 }}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.15, ease: "easeOut" }}
                       >
                         <Box
                           onClick={() => playMusic(file)}

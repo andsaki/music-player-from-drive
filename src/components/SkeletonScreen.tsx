@@ -20,13 +20,12 @@ export const MusicListSkeleton: React.FC<MusicListSkeletonProps> = ({ count = 5 
       {Array.from({ length: count }).map((_, index) => (
         <motion.div
           key={index}
-          initial={{ opacity: 0, y: 10, scale: 0.98 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          exit={{ opacity: 0, scale: 0.98 }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
           transition={{
-            delay: index * 0.04,
-            duration: 0.3,
-            ease: [0.4, 0, 0.2, 1],
+            duration: 0.15,
+            ease: "easeOut",
           }}
         >
           <Box
