@@ -38,4 +38,23 @@ export default defineConfig({
       },
     }),
   ],
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          // MUIを別チャンクに分離（最大のライブラリ）
+          'mui-core': ['@mui/material', '@emotion/react', '@emotion/styled'],
+          'mui-icons': ['@mui/icons-material'],
+          // Reactを別チャンクに分離
+          'vendor-react': ['react', 'react-dom'],
+          // アニメーションライブラリを分離
+          'vendor-animation': ['framer-motion'],
+          // Google関連のライブラリを分離
+          'vendor-google': ['@react-oauth/google', 'gapi-script', 'axios'],
+        },
+      },
+    },
+    // チャンクサイズの警告を1000KBに設定（分割後は問題なくなる）
+    chunkSizeWarningLimit: 1000,
+  },
 });

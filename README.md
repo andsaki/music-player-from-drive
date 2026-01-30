@@ -104,6 +104,15 @@ npm run preview
 4. **操作**: カスタムプレイヤーで再生/一時停止、前後スキップ、音量調整
 5. **共有**: 共有アイコンから曲のリンクをコピー
 
+## 📋 アーキテクチャ決定記録 (ADR)
+
+重要な技術的意思決定は [ADR (Architecture Decision Records)](./docs/adr/) として文書化しています。
+
+主な決定事項:
+- [ADR-0001: Framer Motion をアニメーションライブラリとして使用する](./docs/adr/0001-use-framer-motion-for-animations.md)
+
+詳しくは [docs/adr/README.md](./docs/adr/README.md) を参照してください。
+
 ## 🎯 今後の予定
 
 - プレイリスト機能の追加

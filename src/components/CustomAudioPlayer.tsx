@@ -1,5 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Box, IconButton, Slider, Typography } from '@mui/material';
+// MUI コンポーネントを個別インポート（バンドルサイズ最適化）
+import Box from '@mui/material/Box';
+import IconButton from '@mui/material/IconButton';
+import Slider from '@mui/material/Slider';
+import Typography from '@mui/material/Typography';
+// MUI アイコン（すでに個別インポート）
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import PauseIcon from '@mui/icons-material/Pause';
 import SkipPreviousIcon from '@mui/icons-material/SkipPrevious';

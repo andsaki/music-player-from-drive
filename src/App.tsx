@@ -1,35 +1,38 @@
-import { useState, useEffect, useRef } from "react";
-import {
-  AppBar,
-  Box,
-  CssBaseline,
-  Toolbar,
-  Typography,
-  Container,
-  Button,
-  Select,
-  MenuItem,
-  FormControl,
-  InputLabel,
-  Snackbar,
-  IconButton,
-} from "@mui/material";
+import { useState, useEffect, useRef, lazy, Suspense } from "react";
+// MUI コンポーネントを個別インポート（バンドルサイズ最適化）
+import AppBar from "@mui/material/AppBar";
+import Box from "@mui/material/Box";
+import CssBaseline from "@mui/material/CssBaseline";
+import Toolbar from "@mui/material/Toolbar";
+import Typography from "@mui/material/Typography";
+import Container from "@mui/material/Container";
+import Button from "@mui/material/Button";
+import Select from "@mui/material/Select";
+import MenuItem from "@mui/material/MenuItem";
+import FormControl from "@mui/material/FormControl";
+import InputLabel from "@mui/material/InputLabel";
+import Snackbar from "@mui/material/Snackbar";
+import IconButton from "@mui/material/IconButton";
+import type { SelectChangeEvent } from "@mui/material/Select";
+// MUI アイコン（すでに個別インポート）
 import MusicNoteIcon from "@mui/icons-material/MusicNote";
 import ShareIcon from "@mui/icons-material/Share";
 import CloseIcon from "@mui/icons-material/Close";
 import CloudIcon from "@mui/icons-material/Cloud";
 import PlayArrowIcon from "@mui/icons-material/PlayArrow";
+// その他のライブラリ
 import { useGoogleLogin } from "@react-oauth/google";
 import { motion, AnimatePresence } from "framer-motion";
 import axios from "axios";
-import type { SelectChangeEvent } from "@mui/material/Select";
-import FolderManagement from "./components/FolderManagement.tsx";
-import MemoModal from "./components/MemoModal.tsx";
 import { CustomAudioPlayer } from "./components/CustomAudioPlayer.tsx";
 import { MusicListSkeleton, TrackSwitchingIndicator, RetroLoadingSpinner } from "./components/SkeletonScreen.tsx";
 import { type DriveFile, type FolderOption } from "./types";
 import { ALL_FOLDERS_OPTION, LOCAL_STORAGE_KEYS } from "./constants";
 import { generateShareLink, copyToClipboard } from "./utils";
+
+// 遅延ロード: モーダルコンポーネントは必要になるまでロードしない
+const FolderManagement = lazy(() => import("./components/FolderManagement.tsx"));
+const MemoModal = lazy(() => import("./components/MemoModal.tsx"));
 
 /**
  * メインアプリケーションコンポーネント。
@@ -414,24 +417,27 @@ function App() {
             </Box>
           )}
         </Box>
-        {/* FolderManagement モーダルコンポーネント */}
-        <FolderManagement
-          open={openFolderManagement}
-          onClose={() => setOpenFolderManagement(false)}
-          onAddFolder={handleAddFolder}
-          accessToken={accessToken} // accessTokenを渡す
-        />
-        {/* MemoModal コンポーネント */}
-        {/* MemoModal コンポーネント */}
-        <MemoModal
-          open={openMemoModal}
-          onClose={() => setOpenMemoModal(false)}
-          folderId={currentFilterFolderId}
-          folderName={
-            folderOptions.find((option: FolderOption) => option.id === currentFilterFolderId)
-              ?.name || ALL_FOLDERS_OPTION.name
-          }
-        />
+        {/* FolderManagement モーダルコンポーネント（遅延ロード） */}
+        <Suspense fallback={null}>
+          <FolderManagement
+            open={openFolderManagement}
+            onClose={() => setOpenFolderManagement(false)}
+            onAddFolder={handleAddFolder}
+            accessToken={accessToken} // accessTokenを渡す
+          />
+        </Suspense>
+        {/* MemoModal コンポーネント（遅延ロード） */}
+        <Suspense fallback={null}>
+          <MemoModal
+            open={openMemoModal}
+            onClose={() => setOpenMemoModal(false)}
+            folderId={currentFilterFolderId}
+            folderName={
+              folderOptions.find((option: FolderOption) => option.id === currentFilterFolderId)
+                ?.name || ALL_FOLDERS_OPTION.name
+            }
+          />
+        </Suspense>
         {/* アクセストークンが存在する場合の表示ロジック */}
         {accessToken ? (
           loading ? (
