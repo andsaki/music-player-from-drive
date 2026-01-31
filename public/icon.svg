@@ -1,0 +1,126 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
+  <defs>
+    <!-- Retro sunset gradient background -->
+    <linearGradient id="sunsetBg" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#1a0033;stop-opacity:1" />
+      <stop offset="30%" style="stop-color:#2d1b4e;stop-opacity:1" />
+      <stop offset="60%" style="stop-color:#4a1942;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#8b2f7e;stop-opacity:1" />
+    </linearGradient>
+
+    <!-- Neon pink to cyan gradient -->
+    <linearGradient id="neonPinkCyan" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#ff006e;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#00f5d4;stop-opacity:1" />
+    </linearGradient>
+
+    <!-- Yellow to pink gradient -->
+    <linearGradient id="yellowPink" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#fbf8cc;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#ff006e;stop-opacity:1" />
+    </linearGradient>
+
+    <!-- Intense neon glow -->
+    <filter id="neonGlow">
+      <feGaussianBlur stdDeviation="6" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <!-- Super intense glow for main elements -->
+    <filter id="superGlow">
+      <feGaussianBlur stdDeviation="12" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background with retro sunset -->
+  <rect width="512" height="512" fill="url(#sunsetBg)" rx="80"/>
+
+  <!-- Retro grid pattern (synthwave style) -->
+  <g opacity="0.15" stroke="#00f5d4" stroke-width="2">
+    <!-- Horizontal lines -->
+    <line x1="0" y1="350" x2="512" y2="350"/>
+    <line x1="0" y1="380" x2="512" y2="380"/>
+    <line x1="0" y1="410" x2="512" y2="410"/>
+    <line x1="0" y1="440" x2="512" y2="440"/>
+    <!-- Vertical perspective lines -->
+    <line x1="128" y1="350" x2="64" y2="512"/>
+    <line x1="256" y1="350" x2="256" y2="512"/>
+    <line x1="384" y1="350" x2="448" y2="512"/>
+  </g>
+
+  <!-- Sun/circle backdrop with glow -->
+  <g filter="url(#neonGlow)">
+    <circle cx="256" cy="180" r="100" fill="none" stroke="#ff006e" stroke-width="3" opacity="0.4"/>
+    <circle cx="256" cy="180" r="85" fill="none" stroke="#ff006e" stroke-width="2" opacity="0.6"/>
+    <circle cx="256" cy="180" r="70" fill="none" stroke="#ff6ec7" stroke-width="2" opacity="0.5"/>
+  </g>
+
+  <!-- Main music disc icon (vinyl record style) -->
+  <g filter="url(#superGlow)">
+    <!-- Outer vinyl disc -->
+    <circle cx="256" cy="280" r="140" fill="#0a0020" stroke="url(#neonPinkCyan)" stroke-width="6"/>
+
+    <!-- Vinyl grooves -->
+    <circle cx="256" cy="280" r="120" fill="none" stroke="url(#neonPinkCyan)" stroke-width="1" opacity="0.3"/>
+    <circle cx="256" cy="280" r="105" fill="none" stroke="url(#neonPinkCyan)" stroke-width="1" opacity="0.3"/>
+    <circle cx="256" cy="280" r="90" fill="none" stroke="url(#neonPinkCyan)" stroke-width="1" opacity="0.3"/>
+
+    <!-- Center label with glow -->
+    <circle cx="256" cy="280" r="50" fill="url(#sunsetBg)" stroke="url(#yellowPink)" stroke-width="4"/>
+    <circle cx="256" cy="280" r="15" fill="#1a0033" stroke="#fbf8cc" stroke-width="3"/>
+
+    <!-- Play button triangle -->
+    <path d="M 246 270 L 246 290 L 266 280 Z" fill="url(#yellowPink)"/>
+  </g>
+
+  <!-- Musical note overlay with intense glow -->
+  <g filter="url(#superGlow)" transform="translate(340, 140)">
+    <!-- Note stem -->
+    <rect x="0" y="0" width="16" height="120" fill="url(#neonPinkCyan)" rx="8"/>
+
+    <!-- Eighth note flag (retro angular style) -->
+    <path d="M 16 0 L 70 10 L 70 50 L 16 35 Z" fill="url(#yellowPink)"/>
+
+    <!-- Note head -->
+    <ellipse cx="8" cy="120" rx="28" ry="22" fill="url(#neonPinkCyan)"/>
+
+    <!-- Glow accent dots -->
+    <circle cx="8" cy="120" r="8" fill="#fbf8cc" opacity="0.8"/>
+  </g>
+
+  <!-- Retro corner accents (synthwave style) -->
+  <g filter="url(#neonGlow)">
+    <!-- Top corners -->
+    <path d="M 60 60 L 100 60 L 100 65 L 65 65 L 65 100 L 60 100 Z" fill="#00f5d4" opacity="0.6"/>
+    <path d="M 452 60 L 412 60 L 412 65 L 447 65 L 447 100 L 452 100 Z" fill="#ff006e" opacity="0.6"/>
+
+    <!-- Bottom corners -->
+    <path d="M 60 452 L 100 452 L 100 447 L 65 447 L 65 412 L 60 412 Z" fill="#ff006e" opacity="0.6"/>
+    <path d="M 452 452 L 412 452 L 412 447 L 447 447 L 447 412 L 452 412 Z" fill="#00f5d4" opacity="0.6"/>
+  </g>
+
+  <!-- Scanline effect -->
+  <rect width="512" height="2" y="200" fill="#00f5d4" opacity="0.05"/>
+  <rect width="512" height="2" y="300" fill="#ff006e" opacity="0.05"/>
+  <rect width="512" height="1" y="250" fill="#fbf8cc" opacity="0.08"/>
+
+  <!-- Decorative neon dots -->
+  <g filter="url(#neonGlow)">
+    <circle cx="140" cy="140" r="5" fill="#fbf8cc" opacity="0.8"/>
+    <circle cx="372" cy="140" r="5" fill="#fbf8cc" opacity="0.8"/>
+    <circle cx="100" cy="320" r="4" fill="#00f5d4" opacity="0.6"/>
+    <circle cx="412" cy="380" r="4" fill="#ff006e" opacity="0.6"/>
+  </g>
+</svg>
