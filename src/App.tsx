@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, lazy, Suspense } from "react";
+import { useState, useEffect, useRef, useCallback, lazy, Suspense } from "react";
 // MUI コンポーネントを個別インポート（バンドルサイズ最適化）
 import AppBar from "@mui/material/AppBar";
 import Box from "@mui/material/Box";
@@ -141,7 +141,7 @@ function App() {
   };
 
   // 音楽ファイルをフェッチする関数
-  const fetchMusicFiles = async () => {
+  const fetchMusicFiles = useCallback(async () => {
     if (!accessToken) return;
 
     setLoading(true); // フェッチ開始時にローディング状態をtrueに設定
@@ -178,13 +178,13 @@ function App() {
     } finally {
       setLoading(false); // フェッチ完了後にローディング状態をfalseに設定
     }
-  };
+  }, [accessToken, folderOptions]);
 
   // アクセストークンまたはフォルダオプションが変更されたときに音楽ファイルをフェッチするuseEffect
   useEffect(() => {
     console.log("Current accessToken:", accessToken);
     fetchMusicFiles();
-  }, [accessToken, folderOptions]); // accessTokenまたはfolderOptionsが変更されたときにのみ実行
+  }, [accessToken, folderOptions, fetchMusicFiles]); // fetchMusicFilesを依存配列に追加
 
   // フィルタリングフォルダIDまたはフェッチされた音楽ファイルが変更されたときに、表示用の音楽ファイルをフィルタリングするuseEffect
   useEffect(() => {
