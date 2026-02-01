@@ -84,6 +84,7 @@ function App() {
   const [openMemoModal, setOpenMemoModal] = useState(false);
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState("");
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   // 新しいフォルダが追加されたときのハンドラ
   const handleAddFolder = (newFolder: FolderOption) => {
@@ -145,12 +146,27 @@ function App() {
     if (!accessToken) return;
 
     setLoading(true); // フェッチ開始時にローディング状態をtrueに設定
+    setErrorMessage(null); // エラーメッセージをクリア
     try {
       const allFiles: DriveFile[] = [];
-      // 定義された各フォルダから音楽ファイルをフェッチ（'all'オプションは除く）
-      for (const folder of folderOptions.filter(
+      console.log(`[fetchMusicFiles] Starting fetch for ${folderOptions.length} folders`);
+      console.log('[fetchMusicFiles] Folder options:', folderOptions);
+
+      // フォルダが追加されていない場合（'all'オプションのみの場合）の警告
+      const foldersToFetch = folderOptions.filter(
         (opt: { id: string; name: string }) => opt.id !== "all",
-      )) {
+      );
+
+      if (foldersToFetch.length === 0) {
+        console.warn("[fetchMusicFiles] No folders configured! Please add folders to fetch music files.");
+        setErrorMessage("フォルダが設定されていません。「フォルダを追加」ボタンからフォルダを追加してください。");
+        setAllFetchedMusicFiles([]); // 空の配列を設定
+        return;
+      }
+
+      // 定義された各フォルダから音楽ファイルをフェッチ（'all'オプションは除く）
+      for (const folder of foldersToFetch) {
+        console.log(`[fetchMusicFiles] Fetching files from folder: ${folder.name} (${folder.id})`);
         const response = await axios.get("https://www.googleapis.com/drive/v3/files", {
           headers: {
             Authorization: `Bearer ${accessToken}`, // アクセストークンをヘッダーに含める
@@ -160,6 +176,7 @@ function App() {
             fields: "files(id, name, mimeType, modifiedTime, parents)", // 取得するフィールドを指定
           },
         });
+        console.log(`[fetchMusicFiles] Fetched ${response.data.files?.length || 0} files from ${folder.name}`);
         allFiles.push(...(response.data.files || [])); // 取得したファイルをリストに追加
       }
       // 最終更新日時で降順にソート（新しいものが先頭）
@@ -167,13 +184,34 @@ function App() {
         (a, b) => new Date(b.modifiedTime).getTime() - new Date(a.modifiedTime).getTime(),
       );
 
-      console.log("Fetched music files:", allFiles);
+      console.log(`[fetchMusicFiles] Total fetched music files: ${allFiles.length}`);
+      console.log("[fetchMusicFiles] Files:", allFiles);
       setAllFetchedMusicFiles(allFiles); // 全ての音楽ファイルをstateに保存
     } catch (error: unknown) {
-      console.error("Error fetching music files:", error);
-      // トークンが無効な場合、ログアウトして再ログインを促す
-      if (axios.isAxiosError(error) && error.response && error.response.status === 401) {
-        handleLogout();
+      console.error("[fetchMusicFiles] Error fetching music files:", error);
+
+      // エラーの詳細をログ出力
+      if (axios.isAxiosError(error)) {
+        console.error("[fetchMusicFiles] Axios error details:", {
+          message: error.message,
+          status: error.response?.status,
+          statusText: error.response?.statusText,
+          data: error.response?.data,
+          headers: error.response?.headers,
+        });
+
+        // トークンが無効な場合、ログアウトして再ログインを促す
+        if (error.response && error.response.status === 401) {
+          setErrorMessage("認証エラー: 再度ログインしてください");
+          handleLogout();
+        } else {
+          setErrorMessage(
+            `ファイル取得エラー: ${error.response?.status || "不明"} - ${error.message}`
+          );
+        }
+      } else {
+        console.error("[fetchMusicFiles] Unknown error:", error);
+        setErrorMessage(`予期しないエラーが発生しました: ${String(error)}`);
       }
     } finally {
       setLoading(false); // フェッチ完了後にローディング状態をfalseに設定
@@ -606,16 +644,55 @@ function App() {
                   >
                     音楽ファイルが見つかりませんでした
                   </Typography>
-                  <Typography
-                    variant="body2"
-                    sx={{
-                      color: "text.secondary",
-                      mt: 1,
-                      opacity: 0.7,
-                    }}
-                  >
-                    Google Driveに音楽ファイルを追加してください
-                  </Typography>
+                  {errorMessage ? (
+                    <Box>
+                      <Typography
+                        variant="body2"
+                        sx={{
+                          color: "#ff006e",
+                          mt: 2,
+                          p: 2,
+                          borderRadius: "8px",
+                          background: "rgba(255, 0, 110, 0.1)",
+                          border: "1px solid rgba(255, 0, 110, 0.3)",
+                        }}
+                      >
+                        {errorMessage}
+                      </Typography>
+                      {errorMessage.includes("フォルダが設定されていません") && (
+                        <Button
+                          variant="outlined"
+                          onClick={() => setOpenFolderManagement(true)}
+                          sx={{
+                            mt: 2,
+                            borderColor: "#00f5d4",
+                            color: "#00f5d4",
+                            fontWeight: 600,
+                            px: 4,
+                            boxShadow: "0 0 10px rgba(0, 245, 212, 0.3)",
+                            "&:hover": {
+                              borderColor: "#33f7de",
+                              backgroundColor: "rgba(0, 245, 212, 0.1)",
+                              boxShadow: "0 0 20px rgba(0, 245, 212, 0.5)",
+                            },
+                          }}
+                        >
+                          フォルダを追加
+                        </Button>
+                      )}
+                    </Box>
+                  ) : (
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        color: "text.secondary",
+                        mt: 1,
+                        opacity: 0.7,
+                      }}
+                    >
+                      Google Driveに音楽ファイルを追加してください
+                    </Typography>
+                  )}
                 </Box>
               )}
             </Box>
