@@ -1,5 +1,6 @@
 import express, { Request, Response, Router } from 'express';
 import { google } from 'googleapis';
+import { SESSION_COOKIE_NAME, SESSION_MAX_AGE } from '@music-player/shared';
 import { tokenManager } from '../utils/tokenManager.js';
 import { TokenData, AuthenticatedRequest } from '../types/index.js';
 import { authMiddleware } from '../middleware/auth.js';
@@ -90,11 +91,11 @@ router.get('/google/callback', async (req: Request, res: Response): Promise<void
     tokenManager.setToken(sessionId, tokenData);
 
     // HttpOnly Cookieを設定
-    res.cookie('session_id', sessionId, {
+    res.cookie(SESSION_COOKIE_NAME, sessionId, {
       httpOnly: true, // JavaScriptからアクセス不可
       secure: process.env.NODE_ENV === 'production', // 本番環境ではHTTPSのみ
       sameSite: 'lax', // CSRF対策
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7日間
+      maxAge: SESSION_MAX_AGE, // 7日間
       path: '/',
     });
 
@@ -124,7 +125,7 @@ router.post('/logout', authMiddleware, (req: AuthenticatedRequest, res: Response
     }
 
     // Cookieをクリア
-    res.clearCookie('session_id');
+    res.clearCookie(SESSION_COOKIE_NAME);
 
     res.json({ success: true, message: 'Logged out successfully' });
   } catch (error) {

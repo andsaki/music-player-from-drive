@@ -1,5 +1,6 @@
 import { Response, NextFunction } from 'express';
 import { google } from 'googleapis';
+import { SESSION_COOKIE_NAME, TOKEN_REFRESH_MARGIN } from '@music-player/shared';
 import { tokenManager } from '../utils/tokenManager.js';
 import { TokenData, AuthenticatedRequest } from '../types/index.js';
 
@@ -13,7 +14,7 @@ export const authMiddleware = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const sessionId = req.cookies.session_id;
+    const sessionId = req.cookies[SESSION_COOKIE_NAME];
 
     if (!sessionId) {
       res.status(401).json({ error: 'Unauthorized: No session cookie' });
@@ -30,9 +31,8 @@ export const authMiddleware = async (
 
     // アクセストークンの有効期限チェック（期限切れの5分前に更新を試みる）
     const now = Date.now();
-    const refreshThreshold = 5 * 60 * 1000; // 5分
 
-    if (now + refreshThreshold > tokenData.expiresAt && tokenData.refreshToken) {
+    if (now + TOKEN_REFRESH_MARGIN > tokenData.expiresAt && tokenData.refreshToken) {
       console.log('[AuthMiddleware] Access token about to expire, refreshing...');
 
       try {
@@ -68,7 +68,7 @@ export const authMiddleware = async (
         console.error('[AuthMiddleware] Failed to refresh token:', refreshError);
         // リフレッシュに失敗した場合、セッションを削除
         tokenManager.deleteToken(sessionId);
-        res.clearCookie('session_id');
+        res.clearCookie(SESSION_COOKIE_NAME);
         res.status(401).json({ error: 'Unauthorized: Token refresh failed' });
         return;
       }
