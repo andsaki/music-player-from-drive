@@ -4,11 +4,15 @@
   "buildCommand": "cd ../.. && pnpm build --filter=@music-player/server",
   "installCommand": "cd ../.. && pnpm install",
   "framework": null,
-  "outputDirectory": "dist",
+  "functions": {
+    "api/**/*.js": {
+      "runtime": "nodejs20.x"
+    }
+  },
   "rewrites": [
     {
       "source": "/(.*)",
-      "destination": "/dist/index.js"
+      "destination": "/api/index.js"
     }
   ]
 }

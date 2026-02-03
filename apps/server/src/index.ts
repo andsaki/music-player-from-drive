@@ -1,14 +1,14 @@
 // 環境変数の読み込み（最優先で実行）
 import 'dotenv/config';
 
-import express, { Request, Response, NextFunction } from 'express';
+import express, { Request, Response, NextFunction, Express } from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import helmet from 'helmet';
 import authRouter from './routes/auth.js';
 import { tokenManager } from './utils/tokenManager.js';
 
-const app = express();
+const app: Express = express();
 const PORT = process.env.SERVER_PORT || 3001;
 
 // クリーンアップインターバルID（グレースフルシャットダウン用）
@@ -96,9 +96,11 @@ app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
 });
 
 /**
- * サーバー起動
+ * サーバー起動（ローカル開発環境のみ）
+ * Vercel環境では自動的にServerless Functionとして実行されます
  */
-app.listen(PORT, () => {
+if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
+  app.listen(PORT, () => {
   console.log('='.repeat(60));
   console.log('🚀 Music Player Authentication Server');
   console.log('='.repeat(60));
@@ -134,7 +136,8 @@ app.listen(PORT, () => {
 
   console.log(`\n🧹 Session cleanup enabled (every ${CLEANUP_INTERVAL / 60000} minutes)`);
   console.log('='.repeat(60));
-});
+  });
+}
 
 // Graceful shutdown
 process.on('SIGTERM', () => {
@@ -154,3 +157,6 @@ process.on('SIGINT', () => {
   }
   process.exit(0);
 });
+
+// Vercel Serverless Functions用にexpressアプリをexport
+export default app;
