@@ -173,36 +173,52 @@ HttpOnly Cookie      アクセストークン
 
 ## 実装計画
 
-### Phase 1: バックエンドの基本構造（完了）
+### Phase 1: バックエンドの基本構造（完了 ✅）
 - [x] server/フォルダとディレクトリ構造の作成
 - [x] package.jsonとtsconfig.jsonの設定
 - [x] ADRの作成
 
-### Phase 2: Expressサーバーのセットアップ（次のステップ）
-- [ ] index.tsの実装
-- [ ] 基本的なミドルウェアの設定（CORS, Helmet, Cookie Parser）
-- [ ] エラーハンドリング
+### Phase 2: Expressサーバーのセットアップ（完了 ✅ 2026-02-02）
+- [x] index.tsの実装
+- [x] 基本的なミドルウェアの設定（CORS, Helmet, Cookie Parser）
+- [x] エラーハンドリング
+- [x] Helmetによるセキュリティヘッダー設定
+- [x] CORS設定（localhost:5173, 5174対応）
+- [x] dotenv/configによる環境変数読み込み
 
-### Phase 3: OAuth 2.0の実装
-- [ ] Google OAuth 2.0クライアントの設定
-- [ ] 認証エンドポイントの実装
-- [ ] コールバックハンドラーの実装
-- [ ] トークン取得と保存
+### Phase 3: OAuth 2.0の実装（完了 ✅ 2026-02-02）
+- [x] Google OAuth 2.0クライアントの設定
+- [x] 認証エンドポイントの実装（/auth/google）
+- [x] コールバックハンドラーの実装（/auth/google/callback）
+- [x] トークン取得と保存
+- [x] リフレッシュトークンの取得（offline access）
+- [x] セッション状態確認エンドポイント（/auth/status）
+- [x] トークン取得エンドポイント（/auth/token）
+- [x] ログアウトエンドポイント（/auth/logout）
 
-### Phase 4: リフレッシュトークン管理
-- [ ] トークンストレージの実装（メモリまたはDB）
-- [ ] トークンリフレッシュロジック
-- [ ] セッション有効期限の管理
+### Phase 4: リフレッシュトークン管理（完了 ✅ 2026-02-02）
+- [x] トークンストレージの実装（インメモリ - tokenManager）
+- [x] トークンリフレッシュロジック（期限切れ5分前に自動更新）
+- [x] セッション有効期限の管理
+- [x] 期限切れセッションの自動クリーンアップ（1時間ごと）
+- [x] Graceful shutdownの実装
 
-### Phase 5: フロントエンドの修正
-- [ ] sessionStorage削除
-- [ ] バックエンドAPIとの連携
-- [ ] エラーハンドリングの改善
+### Phase 5: フロントエンドの修正（部分完了 🔄）
+- [x] sessionStorage削除（既存実装維持）
+- [x] バックエンドAPIとの連携（/auth/statusと/auth/token）
+- [x] エラーハンドリングの改善
+- [ ] 完全なバックエンド統合（既存のGoogle API直接呼び出しを維持）
 
-### Phase 6: テストとデプロイ
-- [ ] 開発環境でのテスト
-- [ ] Google Cloud Consoleの設定変更
-- [ ] 本番環境へのデプロイ
+### Phase 6: テストとデプロイ（進行中 🔄）
+- [x] 開発環境でのテスト
+- [x] Google Cloud Consoleの設定変更（リダイレクトURI追加、クライアントシークレット取得）
+- [x] テストスイートの実装（Vitest + supertest）
+  - [x] TokenManagerのユニットテスト（11テスト）
+  - [x] 認証ルートの統合テスト（12テスト）
+  - [x] カバレッジレポート設定
+- [x] ESLint 9へのアップグレード（TypeScript ESLint v8対応）
+- [x] ローカル環境での動作確認（Googleログイン成功）
+- [ ] 本番環境へのデプロイ（Vercel）
 - [ ] セキュリティ監査
 
 ## 追加のセキュリティ対策
@@ -231,4 +247,12 @@ HttpOnly Cookie      アクセストークン
 
 ## 変更履歴
 
+- 2026-02-03: Phase 2-4完了、テストスイート追加、ESLint 9アップグレード、ローカル環境での動作確認完了
+  - バックエンドサーバーの完全実装（Express + TypeScript）
+  - OAuth 2.0フロー実装（リフレッシュトークン対応）
+  - インメモリトークン管理の実装
+  - Vitest + supertestによるテストスイート（23テスト、全て成功）
+  - ESLint 9 + TypeScript ESLint v8へのアップグレード
+  - Google Cloud Consoleの設定完了
+  - ローカル環境でのGoogleログイン動作確認成功
 - 2026-02-02: 初版作成、HttpOnly Cookie + バックエンドサーバーの採用を決定
