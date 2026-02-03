@@ -1,13 +1,12 @@
+// 環境変数の読み込み（最優先で実行）
+import 'dotenv/config';
+
 import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import helmet from 'helmet';
-import dotenv from 'dotenv';
 import authRouter from './routes/auth.js';
 import { tokenManager } from './utils/tokenManager.js';
-
-// 環境変数の読み込み
-dotenv.config({ path: '../.env' });
 
 const app = express();
 const PORT = process.env.SERVER_PORT || 3001;
@@ -36,6 +35,7 @@ app.use(
 // CORS設定
 const allowedOrigins = [
   'http://localhost:5173', // Vite開発サーバー
+  'http://localhost:5174', // Vite開発サーバー（代替ポート）
   'http://localhost:3000', // 代替開発ポート
   process.env.FRONTEND_URL || '',
 ].filter(Boolean);

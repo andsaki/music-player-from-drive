@@ -9,6 +9,11 @@ const router = express.Router();
 /**
  * OAuth 2.0クライアントの設定
  */
+console.log('[Auth] Initializing OAuth2 client...');
+console.log('[Auth] CLIENT_ID:', process.env.GOOGLE_CLIENT_ID ? 'SET' : 'NOT SET');
+console.log('[Auth] CLIENT_SECRET:', process.env.GOOGLE_CLIENT_SECRET ? 'SET' : 'NOT SET');
+console.log('[Auth] REDIRECT_URI:', process.env.GOOGLE_REDIRECT_URI);
+
 const oauth2Client = new google.auth.OAuth2(
   process.env.GOOGLE_CLIENT_ID,
   process.env.GOOGLE_CLIENT_SECRET,
