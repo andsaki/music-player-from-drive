@@ -1,10 +1,10 @@
-import express, { Request, Response } from 'express';
+import express, { Request, Response, Router } from 'express';
 import { google } from 'googleapis';
 import { tokenManager } from '../utils/tokenManager.js';
 import { TokenData, AuthenticatedRequest } from '../types/index.js';
 import { authMiddleware } from '../middleware/auth.js';
 
-const router = express.Router();
+const router: Router = express.Router();
 
 /**
  * OAuth 2.0クライアントの設定

@@ -12,8 +12,8 @@ Google Driveに保存された音楽ファイルをレトロフューチャー�
 ### 🎵 カスタムオーディオプレーヤー
 - 再生/一時停止、前後スキップ
 - ドラッグ可能なシークバー
-- 音量調整（iOS以外）
-- 再生モード切替（連続再生/1曲リピート/なし）
+- 音量調整(iOS以外)
+- 再生モード切替(連続再生/1曲リピート/なし)
 - 固定フッターで常に操作可能
 
 ### 🎶 インタラクティブな音楽リスト
@@ -27,21 +27,150 @@ Google Driveに保存された音楽ファイルをレトロフューチャー�
 - フォルダごとにフィルタリング
 - フォルダごとのメモ機能
 
+### 🔐 セキュアな認証
+- HttpOnly Cookieによる安全なセッション管理
+- バックエンドサーバーでのトークン管理
+- リフレッシュトークンによる長期セッション(7日間)
+
 ### 🔗 共有機能
 曲の共有リンクをワンクリックでコピー
 
 ### 📱 レスポンシブ対応
 スマホ、タブレット、デスクトップに最適化
 
-## 🛠 技術スタック
+## 🏗 アーキテクチャ
 
-- **フレームワーク**: React 18 (TypeScript)
-- **UIライブラリ**: Material-UI v7
-- **アニメーション**: Framer Motion
-- **ビルドツール**: Vite
-- **認証**: Google OAuth 2.0
-- **API**: Google Drive API v3
-- **PWA対応**: Workbox
+このプロジェクトは **pnpm workspaces + Turborepo** によるモノレポ構成です。
+
+```
+music-player-monorepo/
+├── apps/
+│   ├── web/              # フロントエンド(React + Vite)
+│   └── server/           # バックエンド(Express + TypeScript)
+├── packages/
+│   └── shared/           # 共通コード(型定義、ユーティリティ)
+├── pnpm-workspace.yaml   # pnpmワークスペース設定
+├── turbo.json            # Turborepo設定
+└── package.json          # ルートpackage.json
+```
+
+### 技術スタック
+
+**フロントエンド**:
+- React 19 (TypeScript)
+- Material-UI v7
+- Framer Motion
+- Vite
+- Google OAuth 2.0
+
+**バックエンド**:
+- Node.js + Express
+- TypeScript
+- Google APIs Client
+- HttpOnly Cookie認証
+
+**モノレポ管理**:
+- pnpm workspaces
+- Turborepo (ビルドキャッシュ・並列実行)
+
+**開発ツール**:
+- TypeScript Project References
+- ESLint 9 + Prettier
+- Vitest (テスト)
+
+## 🚀 セットアップ
+
+### 前提条件
+
+- **Node.js 20以上** (推奨)
+- **pnpm 9.0以上**
+- Google Cloud Platformのプロジェクト
+- Google Drive API の有効化
+
+### インストール
+
+```bash
+# pnpmがインストールされていない場合
+npm install -g pnpm
+
+# 依存関係をインストール
+pnpm install
+
+# 環境変数を設定
+cp .env.example .env
+# .env ファイルを編集して、認証情報を設定
+
+# フロントエンド用 (.env)
+VITE_GOOGLE_CLIENT_ID=your_client_id_here
+
+# バックエンド用 (apps/server/.env)
+GOOGLE_CLIENT_ID=your_client_id_here
+GOOGLE_CLIENT_SECRET=your_client_secret_here
+GOOGLE_REDIRECT_URI=http://localhost:3001/auth/google/callback
+SESSION_SECRET=your_session_secret_here
+```
+
+### 開発
+
+```bash
+# 全体を開発モードで起動(フロントエンド + バックエンド)
+pnpm dev
+
+# フロントエンドのみ起動
+pnpm dev:web
+
+# バックエンドのみ起動
+pnpm dev:server
+```
+
+### ビルド
+
+```bash
+# 全体をビルド
+pnpm build
+
+# フロントエンドのみビルド
+pnpm build:web
+
+# バックエンドのみビルド
+pnpm build:server
+```
+
+### テスト
+
+```bash
+# 全体のテストを実行
+pnpm test
+
+# テストをウォッチモードで実行
+pnpm --filter @music-player/server test:watch
+
+# カバレッジレポートを生成
+pnpm --filter @music-player/server test:coverage
+```
+
+### その他のコマンド
+
+```bash
+# Lint
+pnpm lint
+
+# Format
+pnpm format
+
+# Type Check
+pnpm type-check
+
+# クリーンアップ
+pnpm clean
+```
+
+## 📖 使い方
+
+1. Google アカウントでログイン
+2. Google Driveのフォルダを追加
+3. 音楽ファイルが自動的に読み込まれます
+4. プレイリストから曲を選択して再生
 
 ## 🎨 デザインシステム
 
@@ -57,120 +186,22 @@ Google Driveに保存された音楽ファイルをレトロフューチャー�
 - **見出し**: Orbitron (700-900)
 - **本文**: Inter (300-700)
 
-### 主要コンポーネント
+## 📚 ドキュメント
 
-- **CustomAudioPlayer**: フルカスタムの音楽プレイヤーUI
-- **テーマシステム**: Material-UIのカスタムテーマ
-- **アニメーション**: Framer Motionのバリアント定義
-- **スタイルエフェクト**: 再利用可能なグロー・グラデーション効果
+- [ADR 001: セキュアな認証システムの実装](docs/adr/001-secure-authentication-with-backend.md)
+- [ADR 002: モノレポアーキテクチャの採用](docs/adr/002-monorepo-architecture.md)
+- [Google Cloud Consoleセットアップガイド](docs/GOOGLE_CLOUD_CONSOLE_SETUP.md)
 
-## 🚀 セットアップ
+## 🤝 コントリビューション
 
-### 前提条件
+プルリクエストを歓迎します！大きな変更の場合は、まずissueを開いて変更内容を議論してください。
 
-- Node.js 18以上
-- Google Cloud Platformのプロジェクト
-- Google Drive API の有効化
+## 📝 ライセンス
 
-### インストール
-
-```bash
-# 依存関係をインストール
-npm install
-
-# 環境変数を設定
-# .env ファイルを作成し、Google OAuth クライアントIDを設定
-VITE_GOOGLE_CLIENT_ID=your_client_id_here
-
-# 開発サーバーを起動
-npm run dev
-```
-
-### ビルド
-
-```bash
-# プロダクションビルド
-npm run build
-
-# ビルドをプレビュー
-npm run preview
-```
-
-## 📖 使い方
-
-1. **ログイン**: Googleアカウントでログイン
-2. **フォルダ追加**: "Add Folder"ボタンから音楽が保存されたGoogle DriveフォルダのIDを追加
-3. **再生**: 曲リストから再生したい曲を選択
-4. **操作**: カスタムプレイヤーで再生/一時停止、前後スキップ、音量調整
-5. **共有**: 共有アイコンから曲のリンクをコピー
-
-## 📋 アーキテクチャ決定記録 (ADR)
-
-重要な技術的意思決定は [ADR (Architecture Decision Records)](./docs/adr/) として文書化しています。
-
-主な決定事項:
-- [ADR-0001: Framer Motion をアニメーションライブラリとして使用する](./docs/adr/0001-use-framer-motion-for-animations.md)
-
-詳しくは [docs/adr/README.md](./docs/adr/README.md) を参照してください。
-
-## 🎯 今後の予定
-
-- プレイリスト機能の追加
-- 検索機能の実装
-- お気に入り機能
-- ダークモード/ライトモードの切り替え
-- 他のクラウドストレージ対応
-
-## 📱 モバイル対応
-
-### iOS対応
-- iOS Safariでの音量制御は、OSのセキュリティ制限により端末の物理ボタンで行ってください
-- その他の機能は完全に動作します
-
-### PWA対応
-- ホーム画面に追加してアプリのように使用可能
-- オフラインでも一部機能が利用可能
-
-## 🐛 トラブルシューティング
-
-### Google Driveの音楽が表示されない
-1. フォルダIDが正しいか確認してください
-2. フォルダの共有設定を確認してください
-3. 音楽ファイルが`audio/`のMIMEタイプを持っているか確認してください
-
-### 音楽が再生されない
-1. ブラウザがaudioフォーマットをサポートしているか確認してください
-2. Google Driveへのアクセス権限を再確認してください
-3. ネットワーク接続を確認してください
-
-### ログアウトしたい
-画面右上の"Logout"ボタンをクリックしてください
+MIT
 
 ## 🙏 謝辞
 
-このプロジェクトは以下のライブラリを使用しています：
-- React & TypeScript
-- Material-UI
-- Framer Motion
-- Google APIs
-
-## ⚠️ 免責事項
-
-このアプリケーションは個人的な用途のために開発されたものです。使用する場合は**自己責任**でお願いします。
-
-- データの損失や破損について一切の責任を負いません
-- Google Drive APIの使用制限や料金については各自で確認してください
-- セキュリティやプライバシーに関する問題について責任を負いません
-- 予告なく機能の変更や削除を行う場合があります
-
-本アプリケーションの使用により生じたいかなる損害についても、開発者は責任を負わないものとします。
-
-## 📄 ライセンス
-
-MIT License
-
-Copyright (c) 2026
-
-本プロジェクトは個人開発として提供されています。利用に伴うリスクや責任はすべて利用者自身に帰属します。
-
-ソフトウェアは「現状有姿」で提供され、明示・黙示を問わず一切の保証を行いません。商品の品質や特定目的への適合性、権利非侵害性についても保証できません。ソフトウェアの使用や利用により発生したいかなる損害や問題についても、開発者は責任を負いません。
+- Material-UI チーム
+- Framer Motion チーム
+- React コミュニティ
