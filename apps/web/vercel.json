@@ -1,0 +1,8 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "version": 2,
+  "buildCommand": "cd ../.. && pnpm build --filter=@music-player/web",
+  "installCommand": "cd ../.. && pnpm install",
+  "framework": "vite",
+  "outputDirectory": "dist"
+}

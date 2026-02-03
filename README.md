@@ -188,9 +188,14 @@ pnpm clean
 
 ## 📚 ドキュメント
 
+### アーキテクチャ決定記録（ADR）
 - [ADR 001: セキュアな認証システムの実装](docs/adr/001-secure-authentication-with-backend.md)
 - [ADR 002: モノレポアーキテクチャの採用](docs/adr/002-monorepo-architecture.md)
+
+### セットアップガイド
 - [Google Cloud Consoleセットアップガイド](docs/GOOGLE_CLOUD_CONSOLE_SETUP.md)
+- [環境変数ガイド](docs/ENV_VARIABLES.md)
+- [Vercelデプロイガイド](docs/VERCEL_DEPLOYMENT.md)
 
 ## 🤝 コントリビューション
 
