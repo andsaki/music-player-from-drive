@@ -58,8 +58,25 @@ function App() {
 
   // アクセストークン（Drive APIコール用）
   const [accessToken, setAccessToken] = useState<string | null>(() => {
-    // sessionStorageから初期値を読み込む
-    return sessionStorage.getItem(LOCAL_STORAGE_KEYS.GOOGLE_ACCESS_TOKEN);
+    // localStorageから初期値を読み込む（ブラウザを閉じても保持される）
+    const token = localStorage.getItem(LOCAL_STORAGE_KEYS.GOOGLE_ACCESS_TOKEN);
+    const expiry = localStorage.getItem(LOCAL_STORAGE_KEYS.TOKEN_EXPIRY);
+
+    // トークンの有効期限をチェック
+    if (token && expiry) {
+      const expiryTime = parseInt(expiry, 10);
+      if (Date.now() < expiryTime) {
+        // トークンがまだ有効
+        return token;
+      } else {
+        // トークンが期限切れ - セキュリティのため削除
+        console.log('[Security] Access token expired, clearing from storage');
+        localStorage.removeItem(LOCAL_STORAGE_KEYS.GOOGLE_ACCESS_TOKEN);
+        localStorage.removeItem(LOCAL_STORAGE_KEYS.TOKEN_EXPIRY);
+        return null;
+      }
+    }
+    return null;
   });
   // Google Driveから取得した全ての音楽ファイルを保持するstate
   const [allFetchedMusicFiles, setAllFetchedMusicFiles] = useState<DriveFile[]>([]);
@@ -100,16 +117,27 @@ function App() {
     onSuccess: (tokenResponse) => {
       console.log("Login successful! Token:", tokenResponse);
       setAccessToken(tokenResponse.access_token);
-      sessionStorage.setItem(LOCAL_STORAGE_KEYS.GOOGLE_ACCESS_TOKEN, tokenResponse.access_token);
+
+      // トークンと有効期限を保存（セキュリティ強化）
+      // expires_in はトークンの有効期間（秒）、デフォルトは3600秒（1時間）
+      const expiresIn = tokenResponse.expires_in || 3600; // 1時間
+      const expiryTime = Date.now() + expiresIn * 1000; // ミリ秒に変換
+
+      localStorage.setItem(LOCAL_STORAGE_KEYS.GOOGLE_ACCESS_TOKEN, tokenResponse.access_token);
+      localStorage.setItem(LOCAL_STORAGE_KEYS.TOKEN_EXPIRY, expiryTime.toString());
+
+      console.log(`[Security] Token will expire at: ${new Date(expiryTime).toLocaleString()}`);
     },
     onError: (errorResponse) => console.log("Login failed! Error:", errorResponse),
     scope: "https://www.googleapis.com/auth/drive.readonly",
   });
 
   // ログアウト処理
-  const handleLogout = () => {
+  const handleLogout = useCallback(() => {
     setAccessToken(null);
-    sessionStorage.removeItem(LOCAL_STORAGE_KEYS.GOOGLE_ACCESS_TOKEN);
+    // セキュリティのため、トークンと有効期限を完全に削除
+    localStorage.removeItem(LOCAL_STORAGE_KEYS.GOOGLE_ACCESS_TOKEN);
+    localStorage.removeItem(LOCAL_STORAGE_KEYS.TOKEN_EXPIRY);
     setAllFetchedMusicFiles([]);
     setMusicFiles([]);
     setSelectedFile(null);
@@ -118,7 +146,28 @@ function App() {
       audioRef.current.pause();
       audioRef.current.src = "";
     }
-  };
+    console.log('[Security] User logged out, tokens cleared');
+  }, []);
+
+  // トークンの有効期限を定期的にチェック（セキュリティ強化）
+  useEffect(() => {
+    if (!accessToken) return;
+
+    // 1分ごとにトークンの有効期限をチェック
+    const intervalId = setInterval(() => {
+      const expiry = localStorage.getItem(LOCAL_STORAGE_KEYS.TOKEN_EXPIRY);
+      if (expiry) {
+        const expiryTime = parseInt(expiry, 10);
+        if (Date.now() >= expiryTime) {
+          console.log('[Security] Access token expired, logging out');
+          handleLogout();
+          setErrorMessage('セッションの有効期限が切れました。再度ログインしてください。');
+        }
+      }
+    }, 60000); // 1分 = 60000ミリ秒
+
+    return () => clearInterval(intervalId);
+  }, [accessToken, handleLogout]);
 
 
   // フォルダフィルタリングの変更ハンドラ
