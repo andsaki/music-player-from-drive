@@ -23,9 +23,7 @@ import PlayArrowIcon from "@mui/icons-material/PlayArrow";
 // その他のライブラリ
 import { motion, AnimatePresence } from "framer-motion";
 import axios from "axios";
-
-// バックエンドAPIのベースURL
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001';
+import { useGoogleLogin } from "@react-oauth/google";
 import { CustomAudioPlayer } from "./components/CustomAudioPlayer.tsx";
 import { MusicListSkeleton, TrackSwitchingIndicator, RetroLoadingSpinner } from "./components/SkeletonScreen.tsx";
 import { type DriveFile, type FolderOption } from "./types";
@@ -58,10 +56,11 @@ function App() {
     localStorage.setItem(LOCAL_STORAGE_KEYS.FOLDER_OPTIONS, JSON.stringify(folderOptions));
   }, [folderOptions]);
 
-  // 認証状態を管理するstate（バックエンドのセッションCookieで管理）
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   // アクセストークン（Drive APIコール用）
-  const [accessToken, setAccessToken] = useState<string | null>(null);
+  const [accessToken, setAccessToken] = useState<string | null>(() => {
+    // sessionStorageから初期値を読み込む
+    return sessionStorage.getItem(LOCAL_STORAGE_KEYS.GOOGLE_ACCESS_TOKEN);
+  });
   // Google Driveから取得した全ての音楽ファイルを保持するstate
   const [allFetchedMusicFiles, setAllFetchedMusicFiles] = useState<DriveFile[]>([]);
   // フィルタリングされた表示用の音楽ファイルを保持するstate
@@ -96,89 +95,31 @@ function App() {
     ]);
   };
 
-  // Googleログイン処理（バックエンド経由）
-  const handleLogin = () => {
-    console.log('[Frontend] Redirecting to backend OAuth...');
-    // バックエンドの認証エンドポイントにリダイレクト
-    window.location.href = `${API_BASE_URL}/auth/google`;
-  };
+  // Googleログイン処理（クライアントサイド）
+  const googleLogin = useGoogleLogin({
+    onSuccess: (tokenResponse) => {
+      console.log("Login successful! Token:", tokenResponse);
+      setAccessToken(tokenResponse.access_token);
+      sessionStorage.setItem(LOCAL_STORAGE_KEYS.GOOGLE_ACCESS_TOKEN, tokenResponse.access_token);
+    },
+    onError: (errorResponse) => console.log("Login failed! Error:", errorResponse),
+    scope: "https://www.googleapis.com/auth/drive.readonly",
+  });
 
-  // ログアウト処理（バックエンド経由）
-  const handleLogout = async () => {
-    try {
-      console.log('[Frontend] Logging out...');
-      await axios.post(`${API_BASE_URL}/auth/logout`, {}, {
-        withCredentials: true, // Cookieを送信
-      });
-
-      // 状態をクリア
-      setIsAuthenticated(false);
-      setAccessToken(null);
-      setAllFetchedMusicFiles([]);
-      setMusicFiles([]);
-      setSelectedFile(null);
-      setPlayingLoading(false);
-
-      if (audioRef.current) {
-        audioRef.current.pause();
-        audioRef.current.src = "";
-      }
-
-      console.log('[Frontend] Logged out successfully');
-    } catch (error) {
-      console.error('[Frontend] Logout error:', error);
+  // ログアウト処理
+  const handleLogout = () => {
+    setAccessToken(null);
+    sessionStorage.removeItem(LOCAL_STORAGE_KEYS.GOOGLE_ACCESS_TOKEN);
+    setAllFetchedMusicFiles([]);
+    setMusicFiles([]);
+    setSelectedFile(null);
+    setPlayingLoading(false);
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.src = "";
     }
   };
 
-  // 認証状態とトークンを取得する関数
-  const checkAuthStatus = useCallback(async () => {
-    try {
-      console.log('[Frontend] Checking auth status...');
-      const response = await axios.get(`${API_BASE_URL}/auth/status`, {
-        withCredentials: true, // Cookieを送信
-      });
-
-      if (response.data.authenticated) {
-        console.log('[Frontend] User is authenticated');
-        setIsAuthenticated(true);
-
-        // アクセストークンを取得
-        const tokenResponse = await axios.get(`${API_BASE_URL}/auth/token`, {
-          withCredentials: true,
-        });
-        setAccessToken(tokenResponse.data.accessToken);
-        console.log('[Frontend] Access token retrieved');
-      }
-    } catch {
-      console.log('[Frontend] User is not authenticated');
-      setIsAuthenticated(false);
-      setAccessToken(null);
-    }
-  }, []);
-
-  // 初回マウント時に認証状態をチェック
-  useEffect(() => {
-    checkAuthStatus();
-  }, [checkAuthStatus]);
-
-  // URLパラメータから認証結果を確認（Google OAuth後のリダイレクト処理）
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const authResult = params.get('auth');
-
-    if (authResult === 'success') {
-      console.log('[Frontend] OAuth success, checking auth status...');
-      // URLパラメータをクリア
-      window.history.replaceState({}, document.title, window.location.pathname);
-      // 認証状態を再取得
-      checkAuthStatus();
-    } else if (authResult === 'error') {
-      console.error('[Frontend] OAuth failed');
-      setErrorMessage('ログインに失敗しました。もう一度お試しください。');
-      // URLパラメータをクリア
-      window.history.replaceState({}, document.title, window.location.pathname);
-    }
-  }, [checkAuthStatus]);
 
   // フォルダフィルタリングの変更ハンドラ
   const handleFilterFolderChange = async (event: SelectChangeEvent<string>) => {
@@ -279,13 +220,13 @@ function App() {
     }
   }, [accessToken, folderOptions]);
 
-  // 認証状態とアクセストークンが取得できたら音楽ファイルをフェッチ
+  // アクセストークンが取得できたら音楽ファイルをフェッチ
   useEffect(() => {
-    if (isAuthenticated && accessToken) {
+    if (accessToken) {
       console.log("Fetching music files with access token");
       fetchMusicFiles();
     }
-  }, [isAuthenticated, accessToken, folderOptions, fetchMusicFiles]);
+  }, [accessToken, folderOptions, fetchMusicFiles]);
 
   // フィルタリングフォルダIDまたはフェッチされた音楽ファイルが変更されたときに、表示用の音楽ファイルをフィルタリングするuseEffect
   useEffect(() => {
@@ -394,7 +335,7 @@ function App() {
             GD-Player
           </Typography>
           {/* 認証されている場合のみログアウトボタンを表示 */}
-          {isAuthenticated && (
+          {accessToken && (
             <Button color="inherit" onClick={handleLogout}>
               Logout
             </Button>
@@ -424,7 +365,7 @@ function App() {
           }}
         >
           {/* 認証されている場合のみフォルダフィルタリングのドロップダウンとフォルダ追加ボタンを表示 */}
-          {isAuthenticated && (
+          {accessToken && (
             <Box sx={{ display: "flex", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
               <FormControl
                 variant="standard"
@@ -540,7 +481,7 @@ function App() {
           />
         </Suspense>
         {/* 認証されている場合の表示ロジック */}
-        {isAuthenticated ? (
+        {accessToken ? (
           loading ? (
             <RetroLoadingSpinner />
           ) : isTransitioning ? (
@@ -868,7 +809,7 @@ function App() {
               <Button
                 variant="contained"
                 size="large"
-                onClick={handleLogin}
+                onClick={() => googleLogin()}
                 startIcon={<CloudIcon />}
                 sx={{
                   px: 6,
