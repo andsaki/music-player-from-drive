@@ -97,8 +97,10 @@ const FolderManagement: React.FC<FolderManagementProps> = ({
           value={folderName}
           onChange={(e) => setFolderName(e.target.value)}
           disabled={loading || !!error}
-          InputProps={{
-            endAdornment: loading ? <CircularProgress size={20} /> : null,
+          slotProps={{
+            input: {
+              endAdornment: loading ? <CircularProgress size={20} /> : null,
+            },
           }}
         />
       </DialogContent>
