@@ -14,6 +14,15 @@ import { type FolderManagementProps } from "../types";
  * フォルダ管理モーダルコンポーネント。
  * Google DriveのフォルダIDを追加・管理します。
  */
+// Google Drive フォルダURLまたはIDからフォルダIDを抽出
+const extractFolderId = (input: string): string => {
+  // URL パターン: /drive/folders/{id} または /drive/u/0/folders/{id} など
+  const urlMatch = input.match(/\/folders\/([a-zA-Z0-9_-]+)/);
+  if (urlMatch) return urlMatch[1];
+  // クエリパラメータや末尾のスラッシュを除去
+  return input.split("?")[0].split("#")[0].trim();
+};
+
 const FolderManagement: React.FC<FolderManagementProps> = ({
   open,
   onClose,
@@ -39,6 +48,7 @@ const FolderManagement: React.FC<FolderManagementProps> = ({
               },
               params: {
                 fields: "name,mimeType",
+                supportsAllDrives: true,
               },
             },
           );
@@ -84,7 +94,7 @@ const FolderManagement: React.FC<FolderManagementProps> = ({
           fullWidth
           variant="standard"
           value={folderId}
-          onChange={(e) => setFolderId(e.target.value)}
+          onChange={(e) => setFolderId(extractFolderId(e.target.value))}
           error={!!error}
           helperText={error}
         />

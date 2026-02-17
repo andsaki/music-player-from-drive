@@ -18,6 +18,14 @@ export interface FolderManagementProps {
   accessToken: string | null;
 }
 
+export interface FolderSettingsModalProps {
+  open: boolean;
+  onClose: () => void;
+  folders: FolderOption[];
+  onDeleteFolder: (folderId: string) => void;
+  onResetFolders: () => void;
+}
+
 export interface MemoModalProps {
   open: boolean;
   onClose: () => void;

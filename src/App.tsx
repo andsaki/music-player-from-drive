@@ -16,6 +16,7 @@ import IconButton from "@mui/material/IconButton";
 import type { SelectChangeEvent } from "@mui/material/Select";
 // MUI アイコン（すでに個別インポート）
 import MusicNoteIcon from "@mui/icons-material/MusicNote";
+import SettingsIcon from "@mui/icons-material/Settings";
 import ShareIcon from "@mui/icons-material/Share";
 import CloseIcon from "@mui/icons-material/Close";
 import CloudIcon from "@mui/icons-material/Cloud";
@@ -33,6 +34,7 @@ import { generateShareLink, copyToClipboard } from "./utils";
 // 遅延ロード: モーダルコンポーネントは必要になるまでロードしない
 const FolderManagement = lazy(() => import("./components/FolderManagement.tsx"));
 const MemoModal = lazy(() => import("./components/MemoModal.tsx"));
+const FolderSettingsModal = lazy(() => import("./components/FolderSettingsModal.tsx"));
 
 /**
  * メインアプリケーションコンポーネント。
@@ -99,9 +101,11 @@ function App() {
 
   // フォルダ管理モーダルの開閉状態を管理するstate
   const [openFolderManagement, setOpenFolderManagement] = useState(false);
+  const [openFolderSettings, setOpenFolderSettings] = useState(false);
   const [openMemoModal, setOpenMemoModal] = useState(false);
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState("");
+  const [undoFolder, setUndoFolder] = useState<FolderOption | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   // 新しいフォルダが追加されたときのハンドラ
@@ -110,6 +114,23 @@ function App() {
       ...prevOptions,
       newFolder,
     ]);
+  };
+
+  const handleDeleteFolder = (folderId: string) => {
+    const deleted = folderOptions.find((f: FolderOption) => f.id === folderId) ?? null;
+    setFolderOptions((prev: Array<{ id: string; name: string }>) =>
+      prev.filter((f) => f.id !== folderId),
+    );
+    setOpenFolderSettings(false);
+    if (deleted) {
+      setUndoFolder(deleted);
+      setSnackbarMessage(`「${deleted.name}」を削除しました`);
+      setSnackbarOpen(true);
+    }
+  };
+
+  const handleResetFolders = () => {
+    setFolderOptions([ALL_FOLDERS_OPTION]);
   };
 
   // Googleログイン処理（クライアントサイド）
@@ -216,19 +237,33 @@ function App() {
       }
 
       // 定義された各フォルダから音楽ファイルをフェッチ（'all'オプションは除く）
+      const failedFolders: string[] = [];
       for (const folder of foldersToFetch) {
         console.log(`[fetchMusicFiles] Fetching files from folder: ${folder.name} (${folder.id})`);
-        const response = await axios.get("https://www.googleapis.com/drive/v3/files", {
-          headers: {
-            Authorization: `Bearer ${accessToken}`, // アクセストークンをヘッダーに含める
-          },
-          params: {
-            q: `'${folder.id}' in parents and mimeType contains 'audio/'`, // フォルダ内のオーディオファイルを検索
-            fields: "files(id, name, mimeType, modifiedTime, parents)", // 取得するフィールドを指定
-          },
-        });
-        console.log(`[fetchMusicFiles] Fetched ${response.data.files?.length || 0} files from ${folder.name}`);
-        allFiles.push(...(response.data.files || [])); // 取得したファイルをリストに追加
+        try {
+          const response = await axios.get("https://www.googleapis.com/drive/v3/files", {
+            headers: {
+              Authorization: `Bearer ${accessToken}`, // アクセストークンをヘッダーに含める
+            },
+            params: {
+              q: `'${folder.id}' in parents and mimeType contains 'audio/'`, // フォルダ内のオーディオファイルを検索
+              fields: "files(id, name, mimeType, modifiedTime, parents)", // 取得するフィールドを指定
+              supportsAllDrives: true,
+              includeItemsFromAllDrives: true,
+            },
+          });
+          console.log(`[fetchMusicFiles] Fetched ${response.data.files?.length || 0} files from ${folder.name}`);
+          allFiles.push(...(response.data.files || [])); // 取得したファイルをリストに追加
+        } catch (folderError: unknown) {
+          if (axios.isAxiosError(folderError) && folderError.response?.status === 401) {
+            // 認証エラーはすぐにログアウト
+            setErrorMessage("認証エラー: 再度ログインしてください");
+            handleLogout();
+            return;
+          }
+          console.error(`[fetchMusicFiles] Failed to fetch folder "${folder.name}":`, folderError);
+          failedFolders.push(folder.name);
+        }
       }
       // 最終更新日時で降順にソート（新しいものが先頭）
       allFiles.sort(
@@ -236,34 +271,14 @@ function App() {
       );
 
       console.log(`[fetchMusicFiles] Total fetched music files: ${allFiles.length}`);
-      console.log("[fetchMusicFiles] Files:", allFiles);
       setAllFetchedMusicFiles(allFiles); // 全ての音楽ファイルをstateに保存
-    } catch (error: unknown) {
-      console.error("[fetchMusicFiles] Error fetching music files:", error);
 
-      // エラーの詳細をログ出力
-      if (axios.isAxiosError(error)) {
-        console.error("[fetchMusicFiles] Axios error details:", {
-          message: error.message,
-          status: error.response?.status,
-          statusText: error.response?.statusText,
-          data: error.response?.data,
-          headers: error.response?.headers,
-        });
-
-        // トークンが無効な場合、ログアウトして再ログインを促す
-        if (error.response && error.response.status === 401) {
-          setErrorMessage("認証エラー: 再度ログインしてください");
-          handleLogout();
-        } else {
-          setErrorMessage(
-            `ファイル取得エラー: ${error.response?.status || "不明"} - ${error.message}`
-          );
-        }
-      } else {
-        console.error("[fetchMusicFiles] Unknown error:", error);
-        setErrorMessage(`予期しないエラーが発生しました: ${String(error)}`);
+      if (failedFolders.length > 0) {
+        setErrorMessage(`フォルダの取得に失敗しました: ${failedFolders.join("、")}（フォルダ設定から削除して再登録してください）`);
       }
+    } catch (error: unknown) {
+      console.error("[fetchMusicFiles] Unexpected error:", error);
+      setErrorMessage(`予期しないエラーが発生しました: ${String(error)}`);
     } finally {
       setLoading(false); // フェッチ完了後にローディング状態をfalseに設定
     }
@@ -321,6 +336,7 @@ function App() {
   const handleShareClick = async (e: React.MouseEvent, fileId: string) => {
     e.stopPropagation(); // 親要素のonClickイベントが発火しないようにする
     const result = await copyToClipboard(generateShareLink(fileId));
+    setUndoFolder(null);
     setSnackbarMessage(result.message);
     setSnackbarOpen(true);
   };
@@ -331,6 +347,7 @@ function App() {
       return;
     }
     setSnackbarOpen(false);
+    setUndoFolder(null);
   };
 
   const handleAudioEnded = () => {
@@ -463,26 +480,35 @@ function App() {
                 </Select>
               </FormControl>
               {currentFilterFolderId === "all" ? (
-                <Button
-                  variant="outlined"
-                  onClick={() => setOpenFolderManagement(true)}
-                  sx={{
-                    borderColor: "#00f5d4",
-                    color: "#00f5d4",
-                    fontWeight: 600,
-                    px: 3,
-                    boxShadow: "0 0 10px rgba(0, 245, 212, 0.3)",
-                    "&:hover": {
-                      borderColor: "#33f7de",
-                      backgroundColor: "rgba(0, 245, 212, 0.1)",
-                      boxShadow: "0 0 20px rgba(0, 245, 212, 0.5)",
-                      transform: "translateY(-2px)",
-                    },
-                    transition: "all 0.3s ease",
-                  }}
-                >
-                  フォルダを追加
-                </Button>
+                <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
+                  <Button
+                    variant="outlined"
+                    onClick={() => setOpenFolderManagement(true)}
+                    sx={{
+                      borderColor: "#00f5d4",
+                      color: "#00f5d4",
+                      fontWeight: 600,
+                      px: 3,
+                      boxShadow: "0 0 10px rgba(0, 245, 212, 0.3)",
+                      "&:hover": {
+                        borderColor: "#33f7de",
+                        backgroundColor: "rgba(0, 245, 212, 0.1)",
+                        boxShadow: "0 0 20px rgba(0, 245, 212, 0.5)",
+                        transform: "translateY(-2px)",
+                      },
+                      transition: "all 0.3s ease",
+                    }}
+                  >
+                    フォルダを追加
+                  </Button>
+                  <IconButton
+                    onClick={() => setOpenFolderSettings(true)}
+                    sx={{ color: "rgba(255,255,255,0.4)", "&:hover": { color: "#00f5d4" } }}
+                    size="small"
+                  >
+                    <SettingsIcon fontSize="small" />
+                  </IconButton>
+                </Box>
               ) : (
                 <Button
                   variant="outlined"
@@ -514,7 +540,17 @@ function App() {
             open={openFolderManagement}
             onClose={() => setOpenFolderManagement(false)}
             onAddFolder={handleAddFolder}
-            accessToken={accessToken} // accessTokenを渡す
+            accessToken={accessToken}
+          />
+        </Suspense>
+        {/* FolderSettings モーダルコンポーネント（遅延ロード） */}
+        <Suspense fallback={null}>
+          <FolderSettingsModal
+            open={openFolderSettings}
+            onClose={() => setOpenFolderSettings(false)}
+            folders={folderOptions}
+            onDeleteFolder={handleDeleteFolder}
+            onResetFolders={handleResetFolders}
           />
         </Suspense>
         {/* MemoModal コンポーネント（遅延ロード） */}
@@ -924,16 +960,31 @@ function App() {
         isLoading={playingLoading}
       />
 
-      {/* Snackbar for copy feedback */}
+      {/* Snackbar for copy feedback / folder delete undo */}
       <Snackbar
         open={snackbarOpen}
-        autoHideDuration={3000}
+        autoHideDuration={4000}
         onClose={handleSnackbarClose}
         message={snackbarMessage}
         action={
-          <IconButton size="small" aria-label="close" color="inherit" onClick={handleSnackbarClose}>
-            <CloseIcon fontSize="small" />
-          </IconButton>
+          <>
+            {undoFolder && (
+              <Button
+                size="small"
+                color="inherit"
+                onClick={() => {
+                  setFolderOptions((prev: Array<{ id: string; name: string }>) => [...prev, undoFolder]);
+                  setUndoFolder(null);
+                  setSnackbarOpen(false);
+                }}
+              >
+                元に戻す
+              </Button>
+            )}
+            <IconButton size="small" aria-label="close" color="inherit" onClick={handleSnackbarClose}>
+              <CloseIcon fontSize="small" />
+            </IconButton>
+          </>
         }
       />
     </Box>
