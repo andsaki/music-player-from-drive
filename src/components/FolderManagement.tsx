@@ -96,7 +96,7 @@ const FolderManagement: React.FC<FolderManagementProps> = ({
           variant="standard"
           value={folderName}
           onChange={(e) => setFolderName(e.target.value)}
-          disabled={loading} // フォルダ名取得中は無効化
+          disabled={loading || !!error}
           InputProps={{
             endAdornment: loading ? <CircularProgress size={20} /> : null,
           }}
@@ -104,7 +104,7 @@ const FolderManagement: React.FC<FolderManagementProps> = ({
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose}>Cancel</Button>
-        <Button onClick={handleAdd} disabled={!folderId || !folderName || loading}>
+        <Button onClick={handleAdd} disabled={!folderId || !folderName || loading || !!error}>
           Add
         </Button>
       </DialogActions>
