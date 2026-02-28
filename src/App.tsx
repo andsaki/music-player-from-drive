@@ -151,6 +151,7 @@ function App() {
     },
     onError: (errorResponse) => console.log("Login failed! Error:", errorResponse),
     scope: "https://www.googleapis.com/auth/drive.readonly",
+    prompt: '', // 既存のGoogleセッションを使用（アカウント選択画面をスキップ）
   });
 
   // ログアウト処理
