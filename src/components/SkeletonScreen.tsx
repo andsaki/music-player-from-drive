@@ -163,7 +163,8 @@ export const RetroLoadingSpinner: React.FC<{ size?: number }> = ({ size = 60 }) 
         flexDirection: "column",
         alignItems: "center",
         justifyContent: "center",
-        mt: 8,
+        minHeight: "60vh",
+        width: "100%",
       }}
     >
       <Box
