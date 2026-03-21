@@ -15,6 +15,8 @@ import RepeatIcon from '@mui/icons-material/Repeat';
 import RepeatOneIcon from '@mui/icons-material/RepeatOne';
 import Replay10Icon from '@mui/icons-material/Replay10';
 import Replay30Icon from '@mui/icons-material/Replay30';
+import Forward10Icon from '@mui/icons-material/Forward10';
+import Forward30Icon from '@mui/icons-material/Forward30';
 import { motion } from 'framer-motion';
 
 interface CustomAudioPlayerProps {
@@ -88,6 +90,14 @@ export const CustomAudioPlayer: React.FC<CustomAudioPlayerProps> = ({
   const handleSkipBackward = (seconds: number) => {
     if (audioRef.current) {
       const newTime = Math.max(0, audioRef.current.currentTime - seconds);
+      audioRef.current.currentTime = newTime;
+      setCurrentTime(newTime);
+    }
+  };
+
+  const handleSkipForward = (seconds: number) => {
+    if (audioRef.current) {
+      const newTime = Math.min(duration, audioRef.current.currentTime + seconds);
       audioRef.current.currentTime = newTime;
       setCurrentTime(newTime);
     }
@@ -286,6 +296,32 @@ export const CustomAudioPlayer: React.FC<CustomAudioPlayerProps> = ({
             }}
           >
             {isPlaying ? <PauseIcon fontSize="large" /> : <PlayArrowIcon fontSize="large" />}
+          </IconButton>
+
+          <IconButton
+            onClick={() => handleSkipForward(10)}
+            disabled={!selectedFile || duration === 0}
+            sx={{
+              color: '#00f5d4',
+              '&:hover': { color: '#33f7de', transform: 'scale(1.1)' },
+              transition: 'all 0.3s ease',
+              '&.Mui-disabled': { color: 'rgba(0, 245, 212, 0.3)' },
+            }}
+          >
+            <Forward10Icon />
+          </IconButton>
+
+          <IconButton
+            onClick={() => handleSkipForward(30)}
+            disabled={!selectedFile || duration === 0}
+            sx={{
+              color: '#00f5d4',
+              '&:hover': { color: '#33f7de', transform: 'scale(1.1)' },
+              transition: 'all 0.3s ease',
+              '&.Mui-disabled': { color: 'rgba(0, 245, 212, 0.3)' },
+            }}
+          >
+            <Forward30Icon />
           </IconButton>
 
           <IconButton
