@@ -9,6 +9,7 @@ export interface DriveFile {
 export interface FolderOption {
   id: string;
   name: string;
+  addedTime?: number;
 }
 
 export interface FolderManagementProps {
