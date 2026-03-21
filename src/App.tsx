@@ -110,10 +110,21 @@ function App() {
 
   // 新しいフォルダが追加されたときのハンドラ
   const handleAddFolder = (newFolder: FolderOption) => {
-    setFolderOptions((prevOptions: Array<{ id: string; name: string }>) => [
-      ...prevOptions,
-      newFolder,
-    ]);
+    setFolderOptions((prevOptions: FolderOption[]) => {
+      // "all" フォルダと通常フォルダを分離
+      const allFolder = prevOptions.find((f) => f.id === "all");
+      const otherFolders = prevOptions.filter((f) => f.id !== "all");
+
+      // 新しいフォルダを追加してaddedTimeでソート（降順：新しいものが先頭）
+      const updatedFolders = [...otherFolders, newFolder].sort((a, b) => {
+        const timeA = a.addedTime ?? 0;
+        const timeB = b.addedTime ?? 0;
+        return timeB - timeA;
+      });
+
+      // "all" フォルダを先頭に戻す
+      return allFolder ? [allFolder, ...updatedFolders] : updatedFolders;
+    });
   };
 
   const handleDeleteFolder = (folderId: string) => {
