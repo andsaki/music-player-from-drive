@@ -13,6 +13,8 @@ import VolumeUpIcon from '@mui/icons-material/VolumeUp';
 import VolumeOffIcon from '@mui/icons-material/VolumeOff';
 import RepeatIcon from '@mui/icons-material/Repeat';
 import RepeatOneIcon from '@mui/icons-material/RepeatOne';
+import Replay10Icon from '@mui/icons-material/Replay10';
+import Replay30Icon from '@mui/icons-material/Replay30';
 import { motion } from 'framer-motion';
 
 interface CustomAudioPlayerProps {
@@ -78,6 +80,14 @@ export const CustomAudioPlayer: React.FC<CustomAudioPlayerProps> = ({
   const handleSeek = (_event: Event, value: number | number[]) => {
     if (audioRef.current) {
       const newTime = value as number;
+      audioRef.current.currentTime = newTime;
+      setCurrentTime(newTime);
+    }
+  };
+
+  const handleSkipBackward = (seconds: number) => {
+    if (audioRef.current) {
+      const newTime = Math.max(0, audioRef.current.currentTime - seconds);
       audioRef.current.currentTime = newTime;
       setCurrentTime(newTime);
     }
@@ -231,6 +241,32 @@ export const CustomAudioPlayer: React.FC<CustomAudioPlayerProps> = ({
             }}
           >
             <SkipPreviousIcon fontSize="large" />
+          </IconButton>
+
+          <IconButton
+            onClick={() => handleSkipBackward(30)}
+            disabled={!selectedFile || duration === 0}
+            sx={{
+              color: '#00f5d4',
+              '&:hover': { color: '#33f7de', transform: 'scale(1.1)' },
+              transition: 'all 0.3s ease',
+              '&.Mui-disabled': { color: 'rgba(0, 245, 212, 0.3)' },
+            }}
+          >
+            <Replay30Icon />
+          </IconButton>
+
+          <IconButton
+            onClick={() => handleSkipBackward(10)}
+            disabled={!selectedFile || duration === 0}
+            sx={{
+              color: '#00f5d4',
+              '&:hover': { color: '#33f7de', transform: 'scale(1.1)' },
+              transition: 'all 0.3s ease',
+              '&.Mui-disabled': { color: 'rgba(0, 245, 212, 0.3)' },
+            }}
+          >
+            <Replay10Icon />
           </IconButton>
 
           <IconButton
