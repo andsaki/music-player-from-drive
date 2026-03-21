@@ -152,7 +152,10 @@ export const TrackSwitchingIndicator: React.FC = () => {
 /**
  * カスタムローディングスピナー（レトロフューチャーデザイン）
  */
-export const RetroLoadingSpinner: React.FC<{ size?: number }> = ({ size = 60 }) => {
+export const RetroLoadingSpinner: React.FC<{ size?: number }> = ({ size }) => {
+  // レスポンシブサイズ: スマホは小さく、PCは大きく
+  const responsiveSize = size || { xs: 50, sm: 60, md: 70 };
+
   return (
     <Box
       component={motion.div}
@@ -163,15 +166,19 @@ export const RetroLoadingSpinner: React.FC<{ size?: number }> = ({ size = 60 }) 
         flexDirection: "column",
         alignItems: "center",
         justifyContent: "center",
-        mt: 8,
+        position: "fixed",
+        top: "50%",
+        left: "50%",
+        transform: "translate(-50%, -50%)",
+        zIndex: 1000,
       }}
     >
       <Box
         sx={{
-          width: size,
-          height: size,
+          width: typeof responsiveSize === 'number' ? responsiveSize : { xs: 50, sm: 60 },
+          height: typeof responsiveSize === 'number' ? responsiveSize : { xs: 50, sm: 60 },
           borderRadius: "50%",
-          border: "3px solid transparent",
+          border: { xs: "2px solid transparent", sm: "3px solid transparent" },
           borderTopColor: "#ff006e",
           borderRightColor: "#00f5d4",
           animation: "spin 1s linear infinite",
@@ -179,12 +186,12 @@ export const RetroLoadingSpinner: React.FC<{ size?: number }> = ({ size = 60 }) 
           "&::before": {
             content: '""',
             position: "absolute",
-            top: -3,
-            left: -3,
-            right: -3,
-            bottom: -3,
+            top: { xs: -2, sm: -3 },
+            left: { xs: -2, sm: -3 },
+            right: { xs: -2, sm: -3 },
+            bottom: { xs: -2, sm: -3 },
             borderRadius: "50%",
-            border: "3px solid transparent",
+            border: { xs: "2px solid transparent", sm: "3px solid transparent" },
             borderTopColor: "#00f5d4",
             borderLeftColor: "#ff006e",
             animation: "spin 1.5s linear infinite reverse",
@@ -195,11 +202,14 @@ export const RetroLoadingSpinner: React.FC<{ size?: number }> = ({ size = 60 }) 
             top: "50%",
             left: "50%",
             transform: "translate(-50%, -50%)",
-            width: size * 0.6,
-            height: size * 0.6,
+            width: "60%",
+            height: "60%",
             borderRadius: "50%",
             background: "radial-gradient(circle, rgba(255, 0, 110, 0.3), transparent)",
-            boxShadow: "0 0 20px rgba(255, 0, 110, 0.5), 0 0 40px rgba(0, 245, 212, 0.3)",
+            boxShadow: {
+              xs: "0 0 10px rgba(255, 0, 110, 0.5), 0 0 20px rgba(0, 245, 212, 0.3)",
+              sm: "0 0 20px rgba(255, 0, 110, 0.5), 0 0 40px rgba(0, 245, 212, 0.3)",
+            },
             animation: "pulse 2s ease-in-out infinite",
           },
           "@keyframes spin": {
@@ -223,10 +233,10 @@ export const RetroLoadingSpinner: React.FC<{ size?: number }> = ({ size = 60 }) 
           ease: "easeInOut",
         }}
         sx={{
-          mt: 3,
+          mt: { xs: 2, sm: 3 },
           color: "#00f5d4",
           fontFamily: "Orbitron, sans-serif",
-          fontSize: "1.1rem",
+          fontSize: { xs: "0.9rem", sm: "1.1rem" },
           letterSpacing: "0.1em",
           textShadow: "0 0 10px rgba(0, 245, 212, 0.5)",
         }}
