@@ -10,7 +10,7 @@ jobs:
           keys:
             - v1-dependencies-{{ checksum "package-lock.json" }} # package-lock.json のハッシュ値に基づいたキャッシュキー
             - v1-dependencies- # フォールバック用のキャッシュキー
-      - run: npm install # 依存関係をインストール
+      - run: npm install --legacy-peer-deps # 依存関係をインストール
       - save_cache: # キャッシュを保存
           paths:
             - node_modules # node_modules ディレクトリをキャッシュ
