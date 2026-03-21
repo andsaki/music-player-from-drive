@@ -164,7 +164,9 @@ export const CustomAudioPlayer: React.FC<CustomAudioPlayerProps> = ({
         backdropFilter: 'blur(10px)',
         borderTop: '2px solid',
         borderImage: 'linear-gradient(90deg, #ff006e, #00f5d4, #fbf8cc) 1',
-        p: 3,
+        pt: 3,
+        px: { xs: 1.5, sm: 3 },
+        pb: 'calc(24px + env(safe-area-inset-bottom))',
         zIndex: 1100,
       }}
     >
@@ -238,8 +240,8 @@ export const CustomAudioPlayer: React.FC<CustomAudioPlayerProps> = ({
       </Box>
 
       {/* コントロールボタン */}
-      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 2, flexWrap: 'wrap' }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: { xs: 1, sm: 2 }, flexWrap: 'wrap' }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 0.5, sm: 2 } }}>
           <IconButton
             onClick={onPrevious}
             disabled={!onPrevious}
@@ -282,8 +284,8 @@ export const CustomAudioPlayer: React.FC<CustomAudioPlayerProps> = ({
           <IconButton
             onClick={handlePlayPause}
             sx={{
-              width: 64,
-              height: 64,
+              width: { xs: 56, sm: 64 },
+              height: { xs: 56, sm: 64 },
               background: 'linear-gradient(135deg, #ff006e, #ff4d9f)',
               boxShadow: '0 0 25px rgba(255, 0, 110, 0.6)',
               color: '#fff',
@@ -339,7 +341,7 @@ export const CustomAudioPlayer: React.FC<CustomAudioPlayerProps> = ({
         </Box>
 
         {/* 再生モードとボリューム */}
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1, sm: 2 } }}>
           {/* 再生モードボタン */}
           <IconButton
             onClick={onTogglePlayMode}
