@@ -164,7 +164,9 @@ export const CustomAudioPlayer: React.FC<CustomAudioPlayerProps> = ({
         backdropFilter: 'blur(10px)',
         borderTop: '2px solid',
         borderImage: 'linear-gradient(90deg, #ff006e, #00f5d4, #fbf8cc) 1',
-        p: 3,
+        pt: 3,
+        px: 3,
+        pb: 'calc(24px + env(safe-area-inset-bottom))',
         zIndex: 1100,
       }}
     >

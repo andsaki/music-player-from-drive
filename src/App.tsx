@@ -447,7 +447,7 @@ function App() {
           mb: 2,
           flexGrow: 1,
           overflowY: "auto",
-          paddingBottom: "120px",
+          paddingBottom: "calc(120px + env(safe-area-inset-bottom))",
           position: "relative",
         }}
       >
