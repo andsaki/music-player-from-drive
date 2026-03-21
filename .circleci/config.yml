@@ -8,13 +8,13 @@ jobs:
       - checkout # リポジトリのコードをチェックアウト
       - restore_cache: # キャッシュを復元
           keys:
-            - v1-dependencies-{{ checksum "package-lock.json" }} # package-lock.json のハッシュ値に基づいたキャッシュキー
-            - v1-dependencies- # フォールバック用のキャッシュキー
+            - v2-dependencies-{{ checksum "package-lock.json" }} # package-lock.json のハッシュ値に基づいたキャッシュキー
+            - v2-dependencies- # フォールバック用のキャッシュキー
       - run: npm install --legacy-peer-deps # 依存関係をインストール
       - save_cache: # キャッシュを保存
           paths:
             - node_modules # node_modules ディレクトリをキャッシュ
-          key: v1-dependencies-{{ checksum "package-lock.json" }} # package-lock.json のハッシュ値に基づいたキャッシュキー
+          key: v2-dependencies-{{ checksum "package-lock.json" }} # package-lock.json のハッシュ値に基づいたキャッシュキー
       - run: npm run build # プロジェクトをビルド
       - run: npm run lint # リンティングを実行
 
