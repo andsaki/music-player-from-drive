@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback, lazy, Suspense } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo, lazy, Suspense } from "react";
 // MUI コンポーネントを個別インポート（バンドルサイズ最適化）
 import AppBar from "@mui/material/AppBar";
 import Box from "@mui/material/Box";
@@ -108,23 +108,41 @@ function App() {
   const [undoFolder, setUndoFolder] = useState<FolderOption | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
+  // フォルダを曲の最新更新日時でソート
+  const sortedFolderOptions = useMemo(() => {
+    if (!allFetchedMusicFiles || allFetchedMusicFiles.length === 0) {
+      return folderOptions;
+    }
+
+    // 各フォルダの最新曲の日時を計算
+    const folderLatestTimes = new Map<string, number>();
+    for (const file of allFetchedMusicFiles) {
+      const modifiedTime = new Date(file.modifiedTime).getTime();
+      for (const parentId of file.parents) {
+        const currentLatest = folderLatestTimes.get(parentId) || 0;
+        if (modifiedTime > currentLatest) {
+          folderLatestTimes.set(parentId, modifiedTime);
+        }
+      }
+    }
+
+    // "all" フォルダを分離
+    const allFolder = folderOptions.find((f) => f.id === "all");
+    const otherFolders = folderOptions.filter((f) => f.id !== "all");
+
+    // 他のフォルダを最新曲の日時でソート（降順：新しいものが先頭）
+    const sorted = otherFolders.sort((a, b) => {
+      const timeA = folderLatestTimes.get(a.id) || 0;
+      const timeB = folderLatestTimes.get(b.id) || 0;
+      return timeB - timeA;
+    });
+
+    return allFolder ? [allFolder, ...sorted] : sorted;
+  }, [folderOptions, allFetchedMusicFiles]);
+
   // 新しいフォルダが追加されたときのハンドラ
   const handleAddFolder = (newFolder: FolderOption) => {
-    setFolderOptions((prevOptions: FolderOption[]) => {
-      // "all" フォルダと通常フォルダを分離
-      const allFolder = prevOptions.find((f) => f.id === "all");
-      const otherFolders = prevOptions.filter((f) => f.id !== "all");
-
-      // 新しいフォルダを追加してaddedTimeでソート（降順：新しいものが先頭）
-      const updatedFolders = [...otherFolders, newFolder].sort((a, b) => {
-        const timeA = a.addedTime ?? 0;
-        const timeB = b.addedTime ?? 0;
-        return timeB - timeA;
-      });
-
-      // "all" フォルダを先頭に戻す
-      return allFolder ? [allFolder, ...updatedFolders] : updatedFolders;
-    });
+    setFolderOptions((prevOptions: FolderOption[]) => [...prevOptions, newFolder]);
   };
 
   const handleDeleteFolder = (folderId: string) => {
@@ -484,7 +502,7 @@ function App() {
                     },
                   }}
                 >
-                  {folderOptions.map((option: FolderOption) => (
+                  {sortedFolderOptions.map((option: FolderOption) => (
                     <MenuItem key={option.id} value={option.id}>
                       {option.name}
                     </MenuItem>
@@ -560,7 +578,7 @@ function App() {
           <FolderSettingsModal
             open={openFolderSettings}
             onClose={() => setOpenFolderSettings(false)}
-            folders={folderOptions}
+            folders={sortedFolderOptions}
             onDeleteFolder={handleDeleteFolder}
             onResetFolders={handleResetFolders}
           />

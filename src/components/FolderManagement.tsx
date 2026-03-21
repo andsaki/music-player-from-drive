@@ -75,7 +75,7 @@ const FolderManagement: React.FC<FolderManagementProps> = ({
 
   const handleAdd = () => {
     if (folderId && folderName) {
-      onAddFolder({ id: folderId, name: folderName, addedTime: Date.now() });
+      onAddFolder({ id: folderId, name: folderName });
       setFolderId("");
       setFolderName("");
       onClose();

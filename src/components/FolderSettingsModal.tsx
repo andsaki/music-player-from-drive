@@ -29,13 +29,7 @@ const FolderSettingsModal: React.FC<FolderSettingsModalProps> = ({
     onClose();
   };
 
-  const registeredFolders = folders
-    .filter((f) => f.id !== "all")
-    .sort((a, b) => {
-      const timeA = a.addedTime ?? 0;
-      const timeB = b.addedTime ?? 0;
-      return timeB - timeA; // 降順：新しいものが先頭
-    });
+  const registeredFolders = folders.filter((f) => f.id !== "all");
  
   return (
     <>
