@@ -48,16 +48,26 @@ export default defineConfig({
   build: {
     rollupOptions: {
       output: {
-        manualChunks: {
+        manualChunks: (id) => {
           // MUIを別チャンクに分離（最大のライブラリ）
-          'mui-core': ['@mui/material', '@emotion/react', '@emotion/styled'],
-          'mui-icons': ['@mui/icons-material'],
+          if (id.includes('@mui/material') || id.includes('@emotion/react') || id.includes('@emotion/styled')) {
+            return 'mui-core';
+          }
+          if (id.includes('@mui/icons-material')) {
+            return 'mui-icons';
+          }
           // Reactを別チャンクに分離
-          'vendor-react': ['react', 'react-dom'],
+          if (id.includes('react') || id.includes('react-dom')) {
+            return 'vendor-react';
+          }
           // アニメーションライブラリを分離
-          'vendor-animation': ['framer-motion'],
+          if (id.includes('framer-motion')) {
+            return 'vendor-animation';
+          }
           // Google関連のライブラリを分離
-          'vendor-google': ['@react-oauth/google', 'gapi-script', 'axios'],
+          if (id.includes('@react-oauth/google') || id.includes('gapi-script') || id.includes('axios')) {
+            return 'vendor-google';
+          }
         },
       },
     },
