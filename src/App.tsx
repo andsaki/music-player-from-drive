@@ -425,7 +425,7 @@ function App() {
       <CssBaseline />
       {/* アプリケーションのヘッダー部分 */}
       <AppBar position="static">
-        <Toolbar sx={{ gap: 2, mt: 0, mb: 0 }}>
+        <Toolbar sx={{ gap: 2, mt: 0, mb: 0, pt: 'env(safe-area-inset-top)' }}>
           <MusicNoteIcon sx={{ mr: 2 }} />
           <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
             GD-Player
