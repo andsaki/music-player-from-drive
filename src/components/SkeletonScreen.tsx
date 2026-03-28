@@ -150,11 +150,17 @@ export const TrackSwitchingIndicator: React.FC = () => {
 };
 
 /**
- * カスタムローディングスピナー（レトロフューチャーデザイン）
+ * 蛍のローディングアニメーション
+ * ふわふわと飛び回り、点滅しながら光る蛍をイメージ
  */
-export const RetroLoadingSpinner: React.FC<{ size?: number }> = ({ size }) => {
-  // レスポンシブサイズ: スマホは小さく、PCは大きく
-  const responsiveSize = size || { xs: 50, sm: 60, md: 70 };
+export const RetroLoadingSpinner: React.FC<{ size?: number }> = () => {
+  // 蛍の個体データ
+  const fireflies = [
+    { delay: 0, x: [0, 30, -20, 10, 0], y: [0, -25, -15, -30, 0], duration: 4 },
+    { delay: 0.5, x: [0, -25, 15, -10, 0], y: [0, -20, -35, -15, 0], duration: 4.5 },
+    { delay: 1, x: [0, 20, -30, 5, 0], y: [0, -30, -10, -25, 0], duration: 5 },
+    { delay: 1.5, x: [0, -15, 25, -5, 0], y: [0, -15, -25, -35, 0], duration: 4.2 },
+  ];
 
   return (
     <Box
@@ -173,55 +179,94 @@ export const RetroLoadingSpinner: React.FC<{ size?: number }> = ({ size }) => {
         zIndex: 1000,
       }}
     >
+      {/* 睡蓮の葉（背景装飾） */}
       <Box
         sx={{
-          width: typeof responsiveSize === 'number' ? responsiveSize : { xs: 50, sm: 60 },
-          height: typeof responsiveSize === 'number' ? responsiveSize : { xs: 50, sm: 60 },
-          borderRadius: "50%",
-          border: { xs: "2px solid transparent", sm: "3px solid transparent" },
-          borderTopColor: "#ff006e",
-          borderRightColor: "#00f5d4",
-          animation: "spin 1s linear infinite",
-          position: "relative",
-          "&::before": {
-            content: '""',
-            position: "absolute",
-            top: { xs: -2, sm: -3 },
-            left: { xs: -2, sm: -3 },
-            right: { xs: -2, sm: -3 },
-            bottom: { xs: -2, sm: -3 },
-            borderRadius: "50%",
-            border: { xs: "2px solid transparent", sm: "3px solid transparent" },
-            borderTopColor: "#00f5d4",
-            borderLeftColor: "#ff006e",
-            animation: "spin 1.5s linear infinite reverse",
-          },
-          "&::after": {
-            content: '""',
-            position: "absolute",
-            top: "50%",
-            left: "50%",
-            transform: "translate(-50%, -50%)",
-            width: "60%",
-            height: "60%",
-            borderRadius: "50%",
-            background: "radial-gradient(circle, rgba(255, 0, 110, 0.3), transparent)",
-            boxShadow: {
-              xs: "0 0 10px rgba(255, 0, 110, 0.5), 0 0 20px rgba(0, 245, 212, 0.3)",
-              sm: "0 0 20px rgba(255, 0, 110, 0.5), 0 0 40px rgba(0, 245, 212, 0.3)",
-            },
-            animation: "pulse 2s ease-in-out infinite",
-          },
-          "@keyframes spin": {
-            "0%": { transform: "rotate(0deg)" },
-            "100%": { transform: "rotate(360deg)" },
-          },
-          "@keyframes pulse": {
-            "0%, 100%": { opacity: 0.4, transform: "translate(-50%, -50%) scale(0.9)" },
-            "50%": { opacity: 1, transform: "translate(-50%, -50%) scale(1.1)" },
+          position: "absolute",
+          bottom: -40,
+          width: 80,
+          height: 80,
+          borderRadius: "50% 50% 50% 0",
+          background: "radial-gradient(circle at 30% 30%, rgba(0, 245, 212, 0.15), rgba(0, 150, 100, 0.1))",
+          transform: "rotate(-45deg)",
+          opacity: 0.4,
+          animation: "float 3s ease-in-out infinite",
+          "@keyframes float": {
+            "0%, 100%": { transform: "rotate(-45deg) translateY(0px)" },
+            "50%": { transform: "rotate(-45deg) translateY(-5px)" },
           },
         }}
       />
+
+      {/* 蛍たちが飛び回るコンテナ */}
+      <Box
+        sx={{
+          position: "relative",
+          width: { xs: 120, sm: 150 },
+          height: { xs: 120, sm: 150 },
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        {fireflies.map((firefly, index) => (
+          <Box
+            key={index}
+            component={motion.div}
+            animate={{
+              x: firefly.x,
+              y: firefly.y,
+              opacity: [0.3, 1, 0.3, 1, 0.3], // 点滅効果
+            }}
+            transition={{
+              x: {
+                duration: firefly.duration,
+                repeat: Infinity,
+                ease: "easeInOut",
+                delay: firefly.delay,
+              },
+              y: {
+                duration: firefly.duration,
+                repeat: Infinity,
+                ease: "easeInOut",
+                delay: firefly.delay,
+              },
+              opacity: {
+                duration: 1.5,
+                repeat: Infinity,
+                ease: "easeInOut",
+                delay: firefly.delay,
+              },
+            }}
+            sx={{
+              position: "absolute",
+              width: { xs: 8, sm: 10 },
+              height: { xs: 8, sm: 10 },
+              borderRadius: "50%",
+              background: "radial-gradient(circle, #ffeb3b, #ffc107)",
+              boxShadow: {
+                xs: "0 0 15px rgba(255, 235, 59, 0.8), 0 0 30px rgba(255, 193, 7, 0.6)",
+                sm: "0 0 20px rgba(255, 235, 59, 0.9), 0 0 40px rgba(255, 193, 7, 0.7)",
+              },
+              filter: "blur(1px)",
+              "&::after": {
+                content: '""',
+                position: "absolute",
+                top: "50%",
+                left: "50%",
+                transform: "translate(-50%, -50%)",
+                width: "150%",
+                height: "150%",
+                borderRadius: "50%",
+                background: "rgba(255, 235, 59, 0.2)",
+                boxShadow: "0 0 10px rgba(255, 235, 59, 0.4)",
+              },
+            }}
+          />
+        ))}
+      </Box>
+
+      {/* ローディングテキスト */}
       <Box
         component={motion.div}
         animate={{
@@ -233,12 +278,12 @@ export const RetroLoadingSpinner: React.FC<{ size?: number }> = ({ size }) => {
           ease: "easeInOut",
         }}
         sx={{
-          mt: { xs: 2, sm: 3 },
-          color: "#00f5d4",
+          mt: { xs: 3, sm: 4 },
+          color: "#ffeb3b",
           fontFamily: "Orbitron, sans-serif",
           fontSize: { xs: "0.9rem", sm: "1.1rem" },
           letterSpacing: "0.1em",
-          textShadow: "0 0 10px rgba(0, 245, 212, 0.5)",
+          textShadow: "0 0 10px rgba(255, 235, 59, 0.5)",
         }}
       >
         Loading...
