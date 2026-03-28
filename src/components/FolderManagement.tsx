@@ -9,6 +9,7 @@ import Button from "@mui/material/Button";
 import CircularProgress from "@mui/material/CircularProgress";
 import axios from "axios";
 import { type FolderManagementProps } from "../types";
+import { getCachedFolderMetadata, cacheFolderMetadata } from "../utils/cache";
 
 /**
  * フォルダ管理モーダルコンポーネント。
@@ -39,6 +40,22 @@ const FolderManagement: React.FC<FolderManagementProps> = ({
       if (folderId && accessToken) {
         setLoading(true);
         setError(null);
+
+        // まずキャッシュをチェック
+        const cachedMetadata = getCachedFolderMetadata(folderId);
+        if (cachedMetadata) {
+          console.log(`[FolderManagement] Using cached metadata for folder: ${folderId}`);
+          if (cachedMetadata.mimeType === "application/vnd.google-apps.folder") {
+            setFolderName(cachedMetadata.name);
+          } else {
+            setError("The provided ID is not a folder ID.");
+            setFolderName("");
+          }
+          setLoading(false);
+          return;
+        }
+
+        // キャッシュがない場合はAPIコール
         try {
           const response = await axios.get(
             `https://www.googleapis.com/drive/v3/files/${folderId}`,
@@ -52,6 +69,13 @@ const FolderManagement: React.FC<FolderManagementProps> = ({
               },
             },
           );
+
+          // 取得したデータをキャッシュに保存（30分間有効）
+          cacheFolderMetadata(folderId, {
+            name: response.data.name,
+            mimeType: response.data.mimeType,
+          });
+
           if (response.data.mimeType === "application/vnd.google-apps.folder") {
             setFolderName(response.data.name);
           } else {

@@ -28,6 +28,7 @@ import { useGoogleLogin } from "@react-oauth/google";
 import { CustomAudioPlayer } from "./components/CustomAudioPlayer.tsx";
 import { MusicListSkeleton, TrackSwitchingIndicator, RetroLoadingSpinner } from "./components/SkeletonScreen.tsx";
 import { type DriveFile, type FolderOption } from "./types";
+import { getCachedMusicFiles, cacheMusicFiles } from "./utils/cache";
 import { ALL_FOLDERS_OPTION, LOCAL_STORAGE_KEYS } from "./constants";
 import { generateShareLink, copyToClipboard } from "./utils";
 
@@ -270,6 +271,16 @@ function App() {
       const failedFolders: string[] = [];
       for (const folder of foldersToFetch) {
         console.log(`[fetchMusicFiles] Fetching files from folder: ${folder.name} (${folder.id})`);
+
+        // まずキャッシュをチェック
+        const cachedFiles = getCachedMusicFiles(folder.id);
+        if (cachedFiles) {
+          console.log(`[fetchMusicFiles] Using cached data for ${folder.name} (${cachedFiles.length} files)`);
+          allFiles.push(...cachedFiles);
+          continue; // キャッシュがあればAPIコールをスキップ
+        }
+
+        // キャッシュがない場合はAPIコール
         try {
           const response = await axios.get("https://www.googleapis.com/drive/v3/files", {
             headers: {
@@ -282,8 +293,13 @@ function App() {
               includeItemsFromAllDrives: true,
             },
           });
-          console.log(`[fetchMusicFiles] Fetched ${response.data.files?.length || 0} files from ${folder.name}`);
-          allFiles.push(...(response.data.files || [])); // 取得したファイルをリストに追加
+          const fetchedFiles = response.data.files || [];
+          console.log(`[fetchMusicFiles] Fetched ${fetchedFiles.length} files from ${folder.name}`);
+
+          // 取得したデータをキャッシュに保存（10分間有効）
+          cacheMusicFiles(folder.id, fetchedFiles);
+
+          allFiles.push(...fetchedFiles); // 取得したファイルをリストに追加
         } catch (folderError: unknown) {
           if (axios.isAxiosError(folderError) && folderError.response?.status === 401) {
             // 認証エラーはすぐにログアウト
