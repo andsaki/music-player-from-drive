@@ -43,6 +43,8 @@ export const CustomAudioPlayer: React.FC<CustomAudioPlayerProps> = ({
   const [duration, setDuration] = useState(0);
   const [volume, setVolume] = useState(1);
   const [isMuted, setIsMuted] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [dragY, setDragY] = useState(0);
 
   // iOSを検出（MSStreamはIE11のUser Agent判定用）
   const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !('MSStream' in window);
@@ -131,15 +133,38 @@ export const CustomAudioPlayer: React.FC<CustomAudioPlayerProps> = ({
     return `${minutes}:${seconds.toString().padStart(2, '0')}`;
   };
 
+  const handleDragEnd = (_event: MouseEvent | TouchEvent | PointerEvent, info: { offset: { y: number } }) => {
+    const threshold = 100;
+    if (info.offset.y < -threshold) {
+      setIsExpanded(true);
+      setDragY(0);
+    } else if (info.offset.y > threshold) {
+      setIsExpanded(false);
+      setDragY(0);
+    } else {
+      setDragY(0);
+    }
+  };
+
+  const toggleExpanded = () => {
+    setIsExpanded(!isExpanded);
+  };
+
   if (!selectedFile) return null;
 
   return (
     <Box
       component={motion.div}
+      drag="y"
+      dragConstraints={{ top: 0, bottom: 0 }}
+      dragElastic={0.2}
+      onDragEnd={handleDragEnd}
       initial={{ opacity: 0, y: 50 }}
       animate={{
         opacity: 1,
-        y: 0,
+        y: dragY,
+        height: isExpanded ? '100vh' : 'auto',
+        top: isExpanded ? 0 : 'auto',
         boxShadow: isLoading
           ? [
               '0 -4px 30px rgba(255, 0, 110, 0.4)',
@@ -149,6 +174,8 @@ export const CustomAudioPlayer: React.FC<CustomAudioPlayerProps> = ({
           : '0 -4px 30px rgba(255, 0, 110, 0.4)',
       }}
       transition={{
+        height: { duration: 0.3, ease: "easeInOut" },
+        top: { duration: 0.3, ease: "easeInOut" },
         boxShadow: {
           duration: 1.5,
           repeat: isLoading ? Infinity : 0,
@@ -157,50 +184,150 @@ export const CustomAudioPlayer: React.FC<CustomAudioPlayerProps> = ({
       }}
       sx={{
         position: 'fixed',
-        bottom: 0,
+        bottom: isExpanded ? 'auto' : 0,
         left: 0,
         right: 0,
         background: 'linear-gradient(180deg, rgba(26,0,51,0.95) 0%, rgba(61,0,102,0.98) 100%)',
         backdropFilter: 'blur(10px)',
         borderTop: '2px solid',
         borderImage: 'linear-gradient(90deg, #ff006e, #00f5d4, #fbf8cc) 1',
-        pt: 3,
+        pt: isExpanded ? 'calc(env(safe-area-inset-top) + 16px)' : 3,
         px: { xs: 1.5, sm: 3 },
         pb: 'calc(24px + env(safe-area-inset-bottom))',
         zIndex: 1100,
+        overflow: isExpanded ? 'auto' : 'visible',
+        display: 'flex',
+        flexDirection: 'column',
       }}
     >
-      <Typography
-        variant="h6"
-        component={motion.div}
-        animate={isLoading ? {
-          opacity: [0.5, 1, 0.5],
-        } : {
-          opacity: 1,
-        }}
-        transition={{
-          duration: 1.5,
-          repeat: isLoading ? Infinity : 0,
-          ease: "easeInOut",
-        }}
+      {/* ドラッグハンドル */}
+      <Box
+        onClick={toggleExpanded}
         sx={{
-          mb: 2,
-          textAlign: 'center',
-          background: 'linear-gradient(90deg, #ff006e, #00f5d4)',
-          backgroundClip: 'text',
-          WebkitBackgroundClip: 'text',
-          WebkitTextFillColor: 'transparent',
-          fontFamily: 'Orbitron, sans-serif',
-          fontWeight: 700,
-          overflow: 'hidden',
-          textOverflow: 'ellipsis',
-          whiteSpace: 'nowrap',
-          filter: isLoading ? 'blur(1px)' : 'blur(0)',
-          transition: 'filter 0.3s ease',
+          width: '100%',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          py: 1,
+          cursor: 'pointer',
+          '&:hover .drag-indicator': {
+            background: 'linear-gradient(90deg, #ff006e, #00f5d4)',
+            boxShadow: '0 0 10px rgba(255, 0, 110, 0.6)',
+          }
         }}
       >
-        {selectedFile.name}
-      </Typography>
+        <Box
+          className="drag-indicator"
+          sx={{
+            width: 40,
+            height: 4,
+            borderRadius: 2,
+            background: 'rgba(255, 255, 255, 0.3)',
+            transition: 'all 0.3s ease',
+          }}
+        />
+      </Box>
+
+      {/* 展開時の大きなビュー */}
+      {isExpanded && (
+        <Box
+          component={motion.div}
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.3 }}
+          sx={{
+            flex: 1,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            py: 4,
+          }}
+        >
+          {/* アルバムアート風のアイコン */}
+          <Box
+            sx={{
+              width: { xs: 250, sm: 300 },
+              height: { xs: 250, sm: 300 },
+              borderRadius: '16px',
+              background: 'linear-gradient(135deg, #ff006e, #ff4d9f, #00f5d4)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              mb: 4,
+              boxShadow: '0 0 40px rgba(255, 0, 110, 0.6), 0 0 80px rgba(0, 245, 212, 0.3)',
+            }}
+          >
+            <VolumeUpIcon sx={{ fontSize: { xs: 120, sm: 150 }, color: '#fff' }} />
+          </Box>
+
+          {/* 曲名 */}
+          <Typography
+            variant="h4"
+            component={motion.div}
+            animate={isLoading ? {
+              opacity: [0.5, 1, 0.5],
+            } : {
+              opacity: 1,
+            }}
+            transition={{
+              duration: 1.5,
+              repeat: isLoading ? Infinity : 0,
+              ease: "easeInOut",
+            }}
+            sx={{
+              mb: 1,
+              textAlign: 'center',
+              background: 'linear-gradient(90deg, #ff006e, #00f5d4)',
+              backgroundClip: 'text',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              fontFamily: 'Orbitron, sans-serif',
+              fontWeight: 700,
+              px: 2,
+              filter: isLoading ? 'blur(1px)' : 'blur(0)',
+              transition: 'filter 0.3s ease',
+            }}
+          >
+            {selectedFile.name}
+          </Typography>
+        </Box>
+      )}
+
+      {/* 縮小時のコンパクトビュー */}
+      {!isExpanded && (
+        <Typography
+          variant="h6"
+          component={motion.div}
+          animate={isLoading ? {
+            opacity: [0.5, 1, 0.5],
+          } : {
+            opacity: 1,
+          }}
+          transition={{
+            duration: 1.5,
+            repeat: isLoading ? Infinity : 0,
+            ease: "easeInOut",
+          }}
+          sx={{
+            mb: 2,
+            textAlign: 'center',
+            background: 'linear-gradient(90deg, #ff006e, #00f5d4)',
+            backgroundClip: 'text',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            fontFamily: 'Orbitron, sans-serif',
+            fontWeight: 700,
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+            filter: isLoading ? 'blur(1px)' : 'blur(0)',
+            transition: 'filter 0.3s ease',
+          }}
+        >
+          {selectedFile.name}
+        </Typography>
+      )}
 
       {/* シークバー */}
       <Box sx={{ mb: 2 }}>
