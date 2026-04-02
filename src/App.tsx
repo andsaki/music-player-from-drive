@@ -1012,6 +1012,53 @@ function App() {
         autoHideDuration={4000}
         onClose={handleSnackbarClose}
         message={snackbarMessage}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+        sx={{
+          top: 'calc(64px + env(safe-area-inset-top)) !important',
+          zIndex: 1300,
+        }}
+        ContentProps={{
+          sx: {
+            minWidth: '300px',
+            background: 'linear-gradient(135deg, rgba(255, 0, 110, 0.95), rgba(255, 77, 159, 0.95))',
+            backdropFilter: 'blur(10px)',
+            border: '2px solid',
+            borderImage: 'linear-gradient(90deg, #ff006e, #00f5d4) 1',
+            borderRadius: '12px',
+            boxShadow: '0 0 30px rgba(255, 0, 110, 0.6), 0 8px 32px rgba(0, 0, 0, 0.4)',
+            color: '#fff',
+            fontWeight: 600,
+            fontSize: '1rem',
+            fontFamily: 'Inter, sans-serif',
+            '& .MuiSnackbarContent-message': {
+              flex: 1,
+              textAlign: 'center',
+              textShadow: '0 2px 10px rgba(0, 0, 0, 0.3)',
+            },
+            '& .MuiSnackbarContent-action': {
+              marginRight: 0,
+              paddingLeft: '16px',
+              '& .MuiButton-root': {
+                color: '#fbf8cc',
+                fontWeight: 700,
+                textShadow: '0 0 10px rgba(251, 248, 204, 0.8)',
+                '&:hover': {
+                  background: 'rgba(251, 248, 204, 0.1)',
+                  transform: 'scale(1.05)',
+                },
+                transition: 'all 0.3s ease',
+              },
+              '& .MuiIconButton-root': {
+                color: '#fff',
+                '&:hover': {
+                  background: 'rgba(255, 255, 255, 0.1)',
+                  transform: 'rotate(90deg) scale(1.1)',
+                },
+                transition: 'all 0.3s ease',
+              },
+            },
+          },
+        }}
         action={
           <>
             {undoFolder && (
