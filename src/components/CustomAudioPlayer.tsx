@@ -133,12 +133,22 @@ export const CustomAudioPlayer: React.FC<CustomAudioPlayerProps> = ({
     return `${minutes}:${seconds.toString().padStart(2, '0')}`;
   };
 
-  const handleDragEnd = (_event: MouseEvent | TouchEvent | PointerEvent, info: { offset: { y: number } }) => {
-    const threshold = 100;
-    if (info.offset.y < -threshold) {
+  const handleDrag = (_event: MouseEvent | TouchEvent | PointerEvent, info: { offset: { y: number } }) => {
+    setDragY(info.offset.y);
+  };
+
+  const handleDragEnd = (_event: MouseEvent | TouchEvent | PointerEvent, info: { offset: { y: number }; velocity: { y: number } }) => {
+    const threshold = 150;
+    const velocityThreshold = 500;
+
+    // velocity（速度）も考慮してスワイプを判定
+    const shouldExpand = info.offset.y < -threshold || info.velocity.y < -velocityThreshold;
+    const shouldCollapse = info.offset.y > threshold || info.velocity.y > velocityThreshold;
+
+    if (shouldExpand && !isExpanded) {
       setIsExpanded(true);
       setDragY(0);
-    } else if (info.offset.y > threshold) {
+    } else if (shouldCollapse && isExpanded) {
       setIsExpanded(false);
       setDragY(0);
     } else {
@@ -156,8 +166,11 @@ export const CustomAudioPlayer: React.FC<CustomAudioPlayerProps> = ({
     <Box
       component={motion.div}
       drag="y"
-      dragConstraints={{ top: 0, bottom: 0 }}
-      dragElastic={0.2}
+      dragConstraints={{ top: -200, bottom: 200 }}
+      dragElastic={0.5}
+      dragMomentum={false}
+      dragDirectionLock
+      onDrag={handleDrag}
       onDragEnd={handleDragEnd}
       initial={{ opacity: 0, y: 50 }}
       animate={{
