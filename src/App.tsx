@@ -1022,8 +1022,7 @@ function App() {
             minWidth: '300px',
             background: 'linear-gradient(135deg, rgba(255, 0, 110, 0.95), rgba(255, 77, 159, 0.95))',
             backdropFilter: 'blur(10px)',
-            border: '2px solid',
-            borderImage: 'linear-gradient(90deg, #ff006e, #00f5d4) 1',
+            border: '2px solid #ff006e',
             borderRadius: '12px',
             boxShadow: '0 0 30px rgba(255, 0, 110, 0.6), 0 8px 32px rgba(0, 0, 0, 0.4)',
             color: '#fff',
@@ -1046,6 +1045,9 @@ function App() {
                   background: 'rgba(251, 248, 204, 0.1)',
                   transform: 'scale(1.05)',
                 },
+                '&:focus': {
+                  outline: 'none',
+                },
                 transition: 'all 0.3s ease',
               },
               '& .MuiIconButton-root': {
@@ -1053,6 +1055,9 @@ function App() {
                 '&:hover': {
                   background: 'rgba(255, 255, 255, 0.1)',
                   transform: 'rotate(90deg) scale(1.1)',
+                },
+                '&:focus': {
+                  outline: 'none',
                 },
                 transition: 'all 0.3s ease',
               },
