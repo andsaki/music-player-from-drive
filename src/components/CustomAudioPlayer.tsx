@@ -167,7 +167,7 @@ export const CustomAudioPlayer: React.FC<CustomAudioPlayerProps> = ({
       component={motion.div}
       drag="y"
       dragConstraints={{ top: -200, bottom: 0 }}
-      dragElastic={0.5}
+      dragElastic={{ top: 0.5, bottom: 0 }}
       dragMomentum={false}
       dragDirectionLock
       onDrag={handleDrag}
