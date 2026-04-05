@@ -134,7 +134,8 @@ export const CustomAudioPlayer: React.FC<CustomAudioPlayerProps> = ({
   };
 
   const handleDrag = (_event: MouseEvent | TouchEvent | PointerEvent, info: { offset: { y: number } }) => {
-    setDragY(info.offset.y);
+    // 下方向（正の値）を完全に防ぐ
+    setDragY(Math.min(0, info.offset.y));
   };
 
   const handleDragEnd = (_event: MouseEvent | TouchEvent | PointerEvent, info: { offset: { y: number } }) => {
