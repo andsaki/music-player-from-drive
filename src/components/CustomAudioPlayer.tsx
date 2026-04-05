@@ -176,7 +176,7 @@ export const CustomAudioPlayer: React.FC<CustomAudioPlayerProps> = ({
       initial={{ opacity: 0, y: 50 }}
       animate={{
         opacity: 1,
-        y: dragY,
+        y: 0,
         height: isExpanded ? '100vh' : 'auto',
         top: isExpanded ? 0 : 'auto',
         boxShadow: isLoading
