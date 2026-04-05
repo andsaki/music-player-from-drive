@@ -166,7 +166,7 @@ export const CustomAudioPlayer: React.FC<CustomAudioPlayerProps> = ({
     <Box
       component={motion.div}
       drag="y"
-      dragConstraints={{ top: -200, bottom: 200 }}
+      dragConstraints={{ top: -200, bottom: 0 }}
       dragElastic={0.5}
       dragMomentum={false}
       dragDirectionLock
