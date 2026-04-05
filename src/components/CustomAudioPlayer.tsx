@@ -44,7 +44,6 @@ export const CustomAudioPlayer: React.FC<CustomAudioPlayerProps> = ({
   const [volume, setVolume] = useState(1);
   const [isMuted, setIsMuted] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
-  const [dragY, setDragY] = useState(0);
 
   // iOSを検出（MSStreamはIE11のUser Agent判定用）
   const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !('MSStream' in window);
@@ -133,11 +132,6 @@ export const CustomAudioPlayer: React.FC<CustomAudioPlayerProps> = ({
     return `${minutes}:${seconds.toString().padStart(2, '0')}`;
   };
 
-  const handleDrag = (_event: MouseEvent | TouchEvent | PointerEvent, info: { offset: { y: number } }) => {
-    // 下方向（正の値）への移動を防ぐため、0以下に制限
-    setDragY(Math.min(0, info.offset.y));
-  };
-
   const handleDragEnd = (_event: MouseEvent | TouchEvent | PointerEvent, info: { offset: { y: number }; velocity: { y: number } }) => {
     const threshold = 150;
     const velocityThreshold = 500;
@@ -148,12 +142,8 @@ export const CustomAudioPlayer: React.FC<CustomAudioPlayerProps> = ({
 
     if (shouldExpand && !isExpanded) {
       setIsExpanded(true);
-      setDragY(0);
     } else if (shouldCollapse && isExpanded) {
       setIsExpanded(false);
-      setDragY(0);
-    } else {
-      setDragY(0);
     }
   };
 
@@ -171,12 +161,10 @@ export const CustomAudioPlayer: React.FC<CustomAudioPlayerProps> = ({
       dragElastic={{ top: 0.5, bottom: 0 }}
       dragMomentum={false}
       dragDirectionLock
-      onDrag={handleDrag}
       onDragEnd={handleDragEnd}
-      initial={{ opacity: 0, y: 50 }}
+      initial={{ opacity: 0 }}
       animate={{
         opacity: 1,
-        y: 0,
         height: isExpanded ? '100vh' : 'auto',
         top: isExpanded ? 0 : 'auto',
         boxShadow: isLoading
