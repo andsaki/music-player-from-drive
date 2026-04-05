@@ -45,6 +45,8 @@ export const CustomAudioPlayer: React.FC<CustomAudioPlayerProps> = ({
   const [isMuted, setIsMuted] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const [dragY, setDragY] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStartY, setDragStartY] = useState(0);
 
   // iOSを検出（MSStreamはIE11のUser Agent判定用）
   const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !('MSStream' in window);
@@ -133,22 +135,28 @@ export const CustomAudioPlayer: React.FC<CustomAudioPlayerProps> = ({
     return `${minutes}:${seconds.toString().padStart(2, '0')}`;
   };
 
-  const handleDrag = (_event: MouseEvent | TouchEvent | PointerEvent, info: { offset: { y: number } }) => {
-    // 下方向（正の値）を完全に防ぐ
-    setDragY(Math.min(0, info.offset.y));
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setIsDragging(true);
+    setDragStartY(e.touches[0].clientY);
   };
 
-  const handleDragEnd = (_event: MouseEvent | TouchEvent | PointerEvent, info: { offset: { y: number } }) => {
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!isDragging) return;
+    const currentY = e.touches[0].clientY;
+    const deltaY = currentY - dragStartY;
+    // 下方向（正の値）を防ぐ
+    setDragY(Math.min(0, deltaY));
+  };
+
+  const handleTouchEnd = () => {
     const threshold = 100;
-    if (info.offset.y < -threshold) {
+    if (dragY < -threshold) {
       setIsExpanded(true);
-      setDragY(0);
-    } else if (info.offset.y > threshold) {
+    } else if (dragY > threshold && isExpanded) {
       setIsExpanded(false);
-      setDragY(0);
-    } else {
-      setDragY(0);
     }
+    setIsDragging(false);
+    setDragY(0);
   };
 
   const toggleExpanded = () => {
@@ -160,11 +168,9 @@ export const CustomAudioPlayer: React.FC<CustomAudioPlayerProps> = ({
   return (
     <Box
       component={motion.div}
-      drag="y"
-      dragConstraints={{ top: -200, bottom: 0 }}
-      dragElastic={{ top: 0.2, bottom: 0 }}
-      onDrag={handleDrag}
-      onDragEnd={handleDragEnd}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
       initial={{ opacity: 0, y: 50 }}
       animate={{
         opacity: 1,
