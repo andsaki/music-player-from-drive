@@ -44,7 +44,6 @@ export const CustomAudioPlayer: React.FC<CustomAudioPlayerProps> = ({
   const [volume, setVolume] = useState(1);
   const [isMuted, setIsMuted] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
-  const [dragY, setDragY] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const [dragStartY, setDragStartY] = useState(0);
 
@@ -140,23 +139,24 @@ export const CustomAudioPlayer: React.FC<CustomAudioPlayerProps> = ({
     setDragStartY(e.touches[0].clientY);
   };
 
-  const handleTouchMove = (e: React.TouchEvent) => {
-    if (!isDragging) return;
-    const currentY = e.touches[0].clientY;
-    const deltaY = currentY - dragStartY;
-    // 下方向（正の値）を防ぐ
-    setDragY(Math.min(0, deltaY));
+  const handleTouchMove = (_e: React.TouchEvent) => {
+    // ドラッグ中の視覚的フィードバックなし（bottom: 0 に固定したまま）
   };
 
-  const handleTouchEnd = () => {
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (!isDragging) return;
+    const currentY = e.changedTouches[0].clientY;
+    const deltaY = currentY - dragStartY;
     const threshold = 100;
-    if (dragY < -threshold) {
+
+    if (deltaY < -threshold && !isExpanded) {
+      // 上スワイプ → 展開
       setIsExpanded(true);
-    } else if (dragY > threshold && isExpanded) {
+    } else if (deltaY > threshold && isExpanded) {
+      // 下スワイプ → 縮小
       setIsExpanded(false);
     }
     setIsDragging(false);
-    setDragY(0);
   };
 
   const toggleExpanded = () => {
@@ -171,10 +171,9 @@ export const CustomAudioPlayer: React.FC<CustomAudioPlayerProps> = ({
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
-      initial={{ opacity: 0, y: 50 }}
+      initial={{ opacity: 0 }}
       animate={{
         opacity: 1,
-        y: dragY,
         height: isExpanded ? '100vh' : 'auto',
         top: isExpanded ? 0 : 'auto',
         boxShadow: isLoading
