@@ -179,25 +179,6 @@ export const RetroLoadingSpinner: React.FC<{ size?: number }> = () => {
         zIndex: 1000,
       }}
     >
-      {/* 睡蓮の葉（背景装飾） */}
-      <Box
-        sx={{
-          position: "absolute",
-          bottom: -40,
-          width: 80,
-          height: 80,
-          borderRadius: "50% 50% 50% 0",
-          background: "radial-gradient(circle at 30% 30%, rgba(0, 245, 212, 0.15), rgba(0, 150, 100, 0.1))",
-          transform: "rotate(-45deg)",
-          opacity: 0.4,
-          animation: "float 3s ease-in-out infinite",
-          "@keyframes float": {
-            "0%, 100%": { transform: "rotate(-45deg) translateY(0px)" },
-            "50%": { transform: "rotate(-45deg) translateY(-5px)" },
-          },
-        }}
-      />
-
       {/* 蛍たちが飛び回るコンテナ */}
       <Box
         sx={{
