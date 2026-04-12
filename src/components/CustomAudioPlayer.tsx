@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 // MUI コンポーネントを個別インポート（バンドルサイズ最適化）
 import Box from '@mui/material/Box';
 import IconButton from '@mui/material/IconButton';
@@ -20,11 +20,13 @@ import Forward30Icon from '@mui/icons-material/Forward30';
 import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
 
 const DRAG_VISUAL_LIMIT = 140;
-const DRAG_TOGGLE_THRESHOLD = 90;
+const DRAG_TOGGLE_THRESHOLD = 60;
+const DRAG_FLICK_VELOCITY = 650; // px per second needed to toggle without covering the full distance
 const clampDragOffset = (value: number, expanded: boolean) =>
   expanded
     ? Math.min(DRAG_VISUAL_LIMIT, Math.max(0, value))
     : Math.max(-DRAG_VISUAL_LIMIT, Math.min(0, value));
+const getNow = () => (typeof performance !== 'undefined' ? performance.now() : Date.now());
 
 interface CustomAudioPlayerProps {
   audioRef: React.RefObject<HTMLAudioElement | null>;
@@ -53,6 +55,8 @@ export const CustomAudioPlayer: React.FC<CustomAudioPlayerProps> = ({
   const [isExpanded, setIsExpanded] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [dragStartY, setDragStartY] = useState(0);
+  const dragVelocityRef = useRef(0);
+  const lastDragPointRef = useRef({ y: 0, time: 0 });
   const dragOffset = useMotionValue(0);
   const animatedDragOffset = useSpring(dragOffset, { stiffness: 360, damping: 40 });
   const gapOverlayHeight = useTransform(animatedDragOffset, (value) => Math.max(0, -value));
@@ -146,16 +150,26 @@ export const CustomAudioPlayer: React.FC<CustomAudioPlayerProps> = ({
 
   const shouldIgnoreDragTarget = (target: EventTarget | null) =>
     target instanceof HTMLElement && target.closest('[data-skip-player-drag="true"]');
-  const isHandleTarget = (target: EventTarget | null) =>
-    target instanceof HTMLElement && target.closest('[data-player-handle="true"]');
 
   const beginDrag = (clientY: number) => {
     setIsDragging(true);
     setDragStartY(clientY);
+    dragVelocityRef.current = 0;
+    lastDragPointRef.current = { y: clientY, time: getNow() };
   };
 
   const updateDrag = (clientY: number) => {
     if (!isDragging) return;
+
+    const now = getNow();
+    const { y: lastY, time: lastTime } = lastDragPointRef.current;
+    const deltaSinceLast = clientY - lastY;
+    const timeSinceLast = now - lastTime;
+    if (timeSinceLast > 0) {
+      dragVelocityRef.current = (deltaSinceLast / timeSinceLast) * 1000;
+    }
+    lastDragPointRef.current = { y: clientY, time: now };
+
     const deltaY = clientY - dragStartY;
     dragOffset.set(clampDragOffset(deltaY, isExpanded));
   };
@@ -163,20 +177,27 @@ export const CustomAudioPlayer: React.FC<CustomAudioPlayerProps> = ({
   const finishDrag = (clientY: number) => {
     if (!isDragging) return;
     const deltaY = clientY - dragStartY;
+    const velocity = dragVelocityRef.current;
 
-    if (!isExpanded && deltaY <= -DRAG_TOGGLE_THRESHOLD) {
+    if (
+      !isExpanded &&
+      (deltaY <= -DRAG_TOGGLE_THRESHOLD || velocity <= -DRAG_FLICK_VELOCITY)
+    ) {
       setIsExpanded(true);
-    } else if (isExpanded && deltaY >= DRAG_TOGGLE_THRESHOLD) {
+    } else if (
+      isExpanded &&
+      (deltaY >= DRAG_TOGGLE_THRESHOLD || velocity >= DRAG_FLICK_VELOCITY)
+    ) {
       setIsExpanded(false);
     }
 
     setIsDragging(false);
+    dragVelocityRef.current = 0;
     dragOffset.set(0);
   };
 
   const handleTouchStart = (e: React.TouchEvent) => {
     if (shouldIgnoreDragTarget(e.target)) return;
-    if (isExpanded && !isHandleTarget(e.target)) return;
     beginDrag(e.touches[0].clientY);
   };
 
@@ -192,7 +213,6 @@ export const CustomAudioPlayer: React.FC<CustomAudioPlayerProps> = ({
 
   const handlePointerDown = (e: React.PointerEvent) => {
     if (shouldIgnoreDragTarget(e.target)) return;
-    if (isExpanded && !isHandleTarget(e.target)) return;
     if (e.pointerType !== 'mouse') return;
     e.preventDefault();
     e.currentTarget.setPointerCapture?.(e.pointerId);
@@ -442,7 +462,10 @@ export const CustomAudioPlayer: React.FC<CustomAudioPlayerProps> = ({
         </Box>
 
         {/* コントロールボタン */}
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: { xs: 1, sm: 2 }, flexWrap: 'wrap' }}>
+        <Box
+          sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: { xs: 1, sm: 2 }, flexWrap: 'wrap' }}
+          data-skip-player-drag={isExpanded ? 'true' : undefined}
+        >
           <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 0.5, sm: 2 } }}>
             <IconButton
               onClick={onPrevious}
@@ -543,7 +566,10 @@ export const CustomAudioPlayer: React.FC<CustomAudioPlayerProps> = ({
           </Box>
 
           {/* 再生モードとボリューム */}
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1, sm: 2 } }}>
+          <Box
+            sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1, sm: 2 } }}
+            data-skip-player-drag={isExpanded ? 'true' : undefined}
+          >
             <IconButton
               onClick={onTogglePlayMode}
               sx={{
