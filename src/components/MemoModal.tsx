@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from "react";
-// MUI コンポーネントを個別インポート（バンドルサイズ最適化）
+import React, { useCallback, useEffect, useState } from "react";
 import Dialog from "@mui/material/Dialog";
 import DialogTitle from "@mui/material/DialogTitle";
 import DialogContent from "@mui/material/DialogContent";
 import DialogActions from "@mui/material/DialogActions";
+import Alert from "@mui/material/Alert";
 import Button from "@mui/material/Button";
+import Stack from "@mui/material/Stack";
 import List from "@mui/material/List";
 import ListItem from "@mui/material/ListItem";
 import ListItemIcon from "@mui/material/ListItemIcon";
@@ -13,81 +14,274 @@ import Checkbox from "@mui/material/Checkbox";
 import IconButton from "@mui/material/IconButton";
 import TextField from "@mui/material/TextField";
 import Divider from "@mui/material/Divider";
+import CircularProgress from "@mui/material/CircularProgress";
 import { motion, AnimatePresence } from "framer-motion";
 import DeleteIcon from "@mui/icons-material/Delete";
-import { type MemoModalProps } from "../types";
-import { LOCAL_STORAGE_KEYS } from "../constants";
+import axios from "axios";
+import { TODO_FILE_NAME, LOCAL_STORAGE_KEYS } from "../constants";
+import { type MemoModalProps, type Task } from "../types";
+import {
+  addUniqueTasks,
+  createTask,
+  DTM_TASK_TEMPLATE,
+  parseTasksFromText,
+  sortTasks,
+  tasksToMarkdown,
+} from "../utils/tasks";
+import {
+  createTodoFile,
+  findTodoFileInFolder,
+  readTodoFile,
+  updateTodoFile,
+} from "../utils/driveTodo";
 
-import { type Task } from "../types";
+const isAuthorizationError = (error: unknown) => {
+  if (axios.isAxiosError(error)) {
+    return error.response?.status === 401 || error.response?.status === 403;
+  }
 
-/**
- * メモモーダルコンポーネント。
- * フォルダごとにメモを保存・表示します。
- */
-const MemoModal: React.FC<MemoModalProps> = ({ open, onClose, folderId, folderName }) => {
+  if (error instanceof Error) {
+    return error.message.includes("401") || error.message.includes("403");
+  }
+
+  return false;
+};
+
+const getMemoStorageKey = (folderId: string) => `${LOCAL_STORAGE_KEYS.USER_MEMO_PREFIX}${folderId}`;
+
+const MemoModal: React.FC<MemoModalProps> = ({
+  open,
+  onClose,
+  folderId,
+  folderName,
+  accessToken,
+  onAuthError,
+}) => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [newTask, setNewTask] = useState("");
+  const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [todoFileId, setTodoFileId] = useState<string | null>(null);
+  const [isLoadingTodo, setIsLoadingTodo] = useState(false);
+  const [isSavingTodo, setIsSavingTodo] = useState(false);
 
-  // folderIdとopenの状態に基づいてメモを読み込む
+  const cacheTasksLocally = useCallback((currentTasks: Task[]) => {
+    if (!folderId || folderId === "all") {
+      return;
+    }
+
+    localStorage.setItem(getMemoStorageKey(folderId), JSON.stringify(currentTasks));
+  }, [folderId]);
+
+  const loadTasksFromLocalCache = useCallback(() => {
+    if (!folderId || folderId === "all") {
+      return [];
+    }
+
+    const savedTasks = localStorage.getItem(getMemoStorageKey(folderId));
+    if (!savedTasks) {
+      return [];
+    }
+
+    try {
+      return sortTasks(JSON.parse(savedTasks) as Task[]);
+    } catch (error) {
+      console.error("Failed to parse tasks from localStorage", error);
+      return [];
+    }
+  }, [folderId]);
+
   useEffect(() => {
-    if (open && folderId) {
-      const memoKey = `${LOCAL_STORAGE_KEYS.USER_MEMO_PREFIX}${folderId}`;
-      const savedTasks = localStorage.getItem(memoKey);
-      if (savedTasks) {
-        try {
-          setTasks(JSON.parse(savedTasks));
-        } catch (e) {
-          console.error("Failed to parse tasks from localStorage", e);
-          setTasks([]);
-        }
-      } else {
-        setTasks([]); // フォルダにメモがない場合はクリア
-      }
+    if (!open) {
+      return;
     }
-  }, [open, folderId]);
 
-  // タスクを保存するハンドラ
-  const saveTasks = (currentTasks: Task[]) => {
-    if (folderId) {
-      const memoKey = `${LOCAL_STORAGE_KEYS.USER_MEMO_PREFIX}${folderId}`;
-      localStorage.setItem(memoKey, JSON.stringify(currentTasks));
+    setFeedbackMessage(null);
+    setErrorMessage(null);
+
+    if (folderId === "all") {
+      setTasks([]);
+      setTodoFileId(null);
+      return;
     }
-  };
+
+    if (!accessToken) {
+      setTasks(loadTasksFromLocalCache());
+      setTodoFileId(null);
+      setErrorMessage("Drive と同期するには再ログインが必要です。");
+      return;
+    }
+
+    const loadTodo = async () => {
+      setIsLoadingTodo(true);
+      try {
+        const todoFile = await findTodoFileInFolder(accessToken, folderId);
+
+        if (!todoFile) {
+          setTasks([]);
+          setTodoFileId(null);
+          setFeedbackMessage(`このフォルダには ${TODO_FILE_NAME} がまだありません。保存すると新規作成します。`);
+          return;
+        }
+
+        const content = await readTodoFile(accessToken, todoFile.id);
+        const loadedTasks = parseTasksFromText(content);
+
+        setTasks(loadedTasks);
+        setTodoFileId(todoFile.id);
+        cacheTasksLocally(loadedTasks);
+        setFeedbackMessage(`${TODO_FILE_NAME} を Drive から読み込みました。`);
+      } catch (error) {
+        console.error("Failed to load TODO from Drive", error);
+
+        if (isAuthorizationError(error)) {
+          onAuthError();
+          setErrorMessage("Drive の認証が切れました。再ログインしてください。");
+          return;
+        }
+
+        const cachedTasks = loadTasksFromLocalCache();
+        setTasks(cachedTasks);
+        setErrorMessage("Drive から TODO を読み込めなかったため、端末内の下書きを表示しています。");
+      } finally {
+        setIsLoadingTodo(false);
+      }
+    };
+
+    void loadTodo();
+  }, [open, folderId, accessToken, onAuthError, cacheTasksLocally, loadTasksFromLocalCache]);
 
   const handleAddTask = () => {
-    if (newTask.trim() !== "") {
-      const newTasks = [
-        { id: Date.now().toString(), text: newTask.trim(), completed: false },
-        ...tasks,
-      ];
-      setTasks(newTasks);
-      saveTasks(newTasks);
-      setNewTask("");
+    if (newTask.trim() === "") {
+      return;
     }
+
+    const newTasks = [createTask(newTask.trim()), ...tasks];
+    setTasks(newTasks);
+    cacheTasksLocally(newTasks);
+    setNewTask("");
+    setFeedbackMessage(null);
+    setErrorMessage(null);
   };
 
   const handleToggleTask = (id: string) => {
-    const newTasks = tasks.map((task) =>
-      task.id === id ? { ...task, completed: !task.completed } : task,
+    const newTasks = sortTasks(
+      tasks.map((task) => (task.id === id ? { ...task, completed: !task.completed } : task)),
     );
-    newTasks.sort((a, b) => Number(a.completed) - Number(b.completed));
     setTasks(newTasks);
-    saveTasks(newTasks);
+    cacheTasksLocally(newTasks);
+    setFeedbackMessage(null);
+    setErrorMessage(null);
   };
 
   const handleDeleteTask = (id: string) => {
     const newTasks = tasks.filter((task) => task.id !== id);
     setTasks(newTasks);
-    saveTasks(newTasks);
+    cacheTasksLocally(newTasks);
+    setFeedbackMessage(null);
+    setErrorMessage(null);
   };
 
-  // メモを保存するハンドラ
-  const handleSaveMemo = () => {
-    saveTasks(tasks);
-    onClose();
+  const handleApplyDtmTemplate = () => {
+    const newTasks = addUniqueTasks(tasks, DTM_TASK_TEMPLATE);
+    setTasks(newTasks);
+    cacheTasksLocally(newTasks);
+    setFeedbackMessage("DTM用テンプレートを追加しました。");
+    setErrorMessage(null);
   };
 
-  // メモを保存せずにモーダルを閉じるハンドラ
+  const handleCopyMarkdown = async () => {
+    try {
+      await navigator.clipboard.writeText(tasksToMarkdown(folderName, tasks));
+      setFeedbackMessage("Markdown形式でコピーしました。");
+    } catch (error) {
+      console.error("Failed to copy tasks", error);
+      setErrorMessage("コピーに失敗しました。");
+    }
+  };
+
+  const handleReloadFromDrive = async () => {
+    if (!accessToken || folderId === "all") {
+      return;
+    }
+
+    setIsLoadingTodo(true);
+    setFeedbackMessage(null);
+    setErrorMessage(null);
+
+    try {
+      const todoFile = await findTodoFileInFolder(accessToken, folderId);
+      if (!todoFile) {
+        setTasks([]);
+        setTodoFileId(null);
+        setFeedbackMessage(`このフォルダには ${TODO_FILE_NAME} がありません。`);
+        return;
+      }
+
+      const content = await readTodoFile(accessToken, todoFile.id);
+      const loadedTasks = parseTasksFromText(content);
+
+      setTasks(loadedTasks);
+      setTodoFileId(todoFile.id);
+      cacheTasksLocally(loadedTasks);
+      setFeedbackMessage(`${TODO_FILE_NAME} を再読み込みしました。`);
+    } catch (error) {
+      console.error("Failed to reload TODO from Drive", error);
+      if (isAuthorizationError(error)) {
+        onAuthError();
+        setErrorMessage("Drive の認証が切れました。再ログインしてください。");
+        return;
+      }
+
+      setErrorMessage("Drive から TODO を再読み込みできませんでした。");
+    } finally {
+      setIsLoadingTodo(false);
+    }
+  };
+
+  const handleSaveMemo = async () => {
+    if (folderId === "all") {
+      setErrorMessage("TODO を使うには具体的なフォルダを選択してください。");
+      return;
+    }
+
+    if (!accessToken) {
+      setErrorMessage("Drive に保存するには再ログインが必要です。");
+      return;
+    }
+
+    setIsSavingTodo(true);
+    setFeedbackMessage(null);
+    setErrorMessage(null);
+
+    try {
+      const markdown = tasksToMarkdown(folderName, tasks);
+
+      if (todoFileId) {
+        await updateTodoFile(accessToken, todoFileId, markdown);
+      } else {
+        const createdTodoFile = await createTodoFile(accessToken, folderId, markdown);
+        setTodoFileId(createdTodoFile.id);
+      }
+
+      cacheTasksLocally(tasks);
+      setFeedbackMessage(`Drive の ${TODO_FILE_NAME} を保存しました。`);
+      onClose();
+    } catch (error) {
+      console.error("Failed to save TODO to Drive", error);
+
+      if (isAuthorizationError(error)) {
+        onAuthError();
+        setErrorMessage("Drive の認証が切れました。再ログインしてください。");
+        return;
+      }
+
+      setErrorMessage("Drive への保存に失敗しました。通信状態を確認してください。");
+    } finally {
+      setIsSavingTodo(false);
+    }
+  };
+
   const handleClose = () => {
     onClose();
   };
@@ -96,77 +290,112 @@ const MemoModal: React.FC<MemoModalProps> = ({ open, onClose, folderId, folderNa
     <Dialog open={open} onClose={handleClose} fullWidth maxWidth="sm" disableEnforceFocus>
       <DialogTitle>Tasks for Folder: {folderName}</DialogTitle>
       <DialogContent>
-        <TextField
-          autoFocus
-          margin="dense"
-          label="Add a new task"
-          type="text"
-          fullWidth
-          variant="outlined"
-          value={newTask}
-          onChange={(e) => setNewTask(e.target.value)}
-          onKeyPress={(e) => {
-            if (e.key === "Enter") {
-              handleAddTask();
-            }
-          }}
-        />
-        <Button onClick={handleAddTask} variant="contained" sx={{ mt: 2, mb: 2 }}>
-          Add Task
-        </Button>
-        <Divider />
-        <List>
-          <AnimatePresence>
-            {tasks.map((task, index) => (
-              <motion.div
-                key={task.id}
-                layout
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 10 }}
-                transition={{ duration: 0.3 }}
-              >
-                <ListItem
-                  sx={{ my: 2 }}
-                  secondaryAction={
-                    <IconButton
-                    edge="end"
-                    aria-label="delete"
-                    onClick={() => handleDeleteTask(task.id)}
-                    sx={{ p: 0 }}
+        <Stack spacing={1.5} sx={{ mb: 2, mt: 1 }}>
+          {folderId === "all" ? (
+            <Alert severity="warning">TODO を使うには「All Folders」以外の曲フォルダを選択してください。</Alert>
+          ) : (
+            <Alert severity="info" variant="outlined">
+              この画面は Drive フォルダ内の {TODO_FILE_NAME} を読み書きします。iPhone PWA と Mac で同じ TODO を共有できます。
+            </Alert>
+          )}
+          {feedbackMessage && <Alert severity="success">{feedbackMessage}</Alert>}
+          {errorMessage && <Alert severity="error">{errorMessage}</Alert>}
+          <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
+            <Button onClick={handleApplyDtmTemplate} variant="outlined" disabled={folderId === "all" || isLoadingTodo || isSavingTodo}>
+              DTMテンプレート追加
+            </Button>
+            <Button onClick={handleReloadFromDrive} variant="outlined" disabled={folderId === "all" || isLoadingTodo || isSavingTodo || !accessToken}>
+              Driveから再読込
+            </Button>
+            <Button onClick={handleCopyMarkdown} variant="outlined" disabled={folderId === "all" || isLoadingTodo}>
+              Markdownコピー
+            </Button>
+          </Stack>
+        </Stack>
+        {isLoadingTodo ? (
+          <Stack direction="row" spacing={1} alignItems="center" justifyContent="center" sx={{ py: 6 }}>
+            <CircularProgress size={24} />
+            <span>Drive から TODO を読み込み中...</span>
+          </Stack>
+        ) : (
+          <>
+            <TextField
+              autoFocus
+              margin="dense"
+              label="Add a new task"
+              type="text"
+              fullWidth
+              variant="outlined"
+              value={newTask}
+              onChange={(event) => setNewTask(event.target.value)}
+              placeholder="例: サビのリードを差し替える / 低域を整理する"
+              onKeyDown={(event) => {
+                if (event.key === "Enter") {
+                  handleAddTask();
+                }
+              }}
+              disabled={folderId === "all"}
+            />
+            <Button onClick={handleAddTask} variant="contained" sx={{ mt: 2, mb: 2 }} disabled={folderId === "all"}>
+              Add Task
+            </Button>
+            <Divider />
+            <List>
+              <AnimatePresence>
+                {tasks.map((task, index) => (
+                  <motion.div
+                    key={task.id}
+                    layout
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 10 }}
+                    transition={{ duration: 0.3 }}
                   >
-                      <DeleteIcon />
-                    </IconButton>
-                  }
-                  disablePadding
-                >
-                  <ListItemIcon>
-                    <Checkbox
-                      edge="start"
-                      checked={task.completed}
-                      tabIndex={-1}
-                      disableRipple
-                      onChange={() => handleToggleTask(task.id)}
-                    />
-                  </ListItemIcon>
-                  <ListItemText
-                    primary={task.text}
-                    sx={{
-                      textDecoration: task.completed ? "line-through" : "none",
-                      mr: 5,
-                    }}
-                  />
-                </ListItem>
-                {index < tasks.length - 1 && <Divider />}{/* 最後のタスク以外にDividerを追加 */}
-              </motion.div>
-            ))}
-          </AnimatePresence>
-        </List>
+                    <ListItem
+                      sx={{ my: 2 }}
+                      secondaryAction={
+                        <IconButton
+                          edge="end"
+                          aria-label="delete"
+                          onClick={() => handleDeleteTask(task.id)}
+                          sx={{ p: 0 }}
+                          disabled={folderId === "all"}
+                        >
+                          <DeleteIcon />
+                        </IconButton>
+                      }
+                      disablePadding
+                    >
+                      <ListItemIcon>
+                        <Checkbox
+                          edge="start"
+                          checked={task.completed}
+                          tabIndex={-1}
+                          disableRipple
+                          onChange={() => handleToggleTask(task.id)}
+                          disabled={folderId === "all"}
+                        />
+                      </ListItemIcon>
+                      <ListItemText
+                        primary={task.text}
+                        sx={{
+                          textDecoration: task.completed ? "line-through" : "none",
+                          mr: 5,
+                        }}
+                      />
+                    </ListItem>
+                    {index < tasks.length - 1 && <Divider />}
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+            </List>
+          </>
+        )}
       </DialogContent>
       <DialogActions>
-        <Button onClick={handleClose}>Cancel</Button>
-        <Button onClick={handleSaveMemo} variant="contained">
-          Save
+        <Button onClick={handleClose} disabled={isSavingTodo}>Cancel</Button>
+        <Button onClick={handleSaveMemo} variant="contained" disabled={folderId === "all" || isLoadingTodo || isSavingTodo}>
+          {isSavingTodo ? "Driveに保存中..." : "Driveに保存"}
         </Button>
       </DialogActions>
     </Dialog>

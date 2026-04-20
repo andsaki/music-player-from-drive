@@ -31,6 +31,8 @@ export interface MemoModalProps {
   onClose: () => void;
   folderId: string;
   folderName: string;
+  accessToken: string | null;
+  onAuthError: () => void;
 }
 
 export interface Task {
