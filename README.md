@@ -83,6 +83,10 @@ npm install
 # .env ファイルを作成し、Google OAuth クライアントIDを設定
 VITE_GOOGLE_CLIENT_ID=your_client_id_here
 
+# Notion 手動同期を使う場合
+VITE_NOTION_SYNC_PAGE_ID=your_notion_page_id_here
+NOTION_API_KEY=your_notion_integration_secret
+
 # 開発サーバーを起動
 npm run dev
 ```
@@ -105,6 +109,7 @@ npm run preview
 4. **操作**: カスタムプレイヤーで再生/一時停止、前後スキップ、音量調整
 5. **共有**: 共有アイコンから曲のリンクをコピー
 6. **制作TODO運用**: 曲フォルダを選んで `メモ` を開くと、そのフォルダ内の `TODO.md` を自動で読み込みます。保存すると同じ Drive フォルダ内の `TODO.md` を更新します。
+7. **Notion同期**: `VITE_NOTION_SYNC_PAGE_ID` と `NOTION_API_KEY` を設定すると、`メモ` 画面から `Notionから読込` / `Notionへ保存` が使えます。Notion ページ内には `App TODO Sync: <フォルダ名>` のトグルブロックを作り、その子要素のチェックリストだけを同期します。
 
 ## 🎛 iPhone PWA での TODO 運用
 
@@ -112,8 +117,27 @@ npm run preview
 - 各曲フォルダの中に、音源ファイルと同じ階層で `TODO.md` を管理します
 - iPhone の PWA で曲フォルダを選択し、`メモ` から TODO を確認・更新します
 - `Driveに保存` を押すと、そのフォルダの `TODO.md` を新規作成または上書きします
+- Notion 同期を有効にすると、同じ TODO を `App TODO Sync: <フォルダ名>` として手動で退避できます
 - `All Folders` 選択中は、どの曲の TODO か特定できないためメモ機能は使いません
 - 既存ユーザーは Drive 書き込み権限が必要になるため、一度ログアウトして再ログインしてください
+
+## 📝 Notion 手動同期
+
+- 対象ページは `VITE_NOTION_SYNC_PAGE_ID` で指定します
+- API キーはサーバー側の `NOTION_API_KEY` にのみ置き、フロントには出しません
+- アプリは Notion ページ内の `App TODO Sync: <フォルダ名>` トグルだけを更新するため、`感覚メモ` や他の本文は壊しません
+- `Notionから読込` はトグル内のチェックリストをローカル TODO に取り込みます
+- `Notionへ保存` は現在のローカル TODO をトグル内のチェックリストへ上書き保存します
+
+## ✅ 本番投入前チェック
+
+- Vercel の環境変数に `NOTION_API_KEY` を設定する
+- フロント用の環境変数に `VITE_NOTION_SYNC_PAGE_ID` を設定する
+- 対象 Notion ページを integration に共有する
+- 曲フォルダを1つ選び、`Notionへ保存` を押して `App TODO Sync: <フォルダ名>` トグルが作られることを確認する
+- Notion 側でチェック状態を1件変え、`Notionから読込` でアプリ側へ反映されることを確認する
+- `感覚メモ` や同期対象外の本文が壊れていないことを確認する
+- Drive と Notion を両方使う場合、`Driveに保存` と `Notionへ保存` をそれぞれ1回ずつ試して期待どおり共存することを確認する
 
 ## 📋 アーキテクチャ決定記録 (ADR)
 

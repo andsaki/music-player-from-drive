@@ -1,29 +1,41 @@
-# Driveフォルダごとの `TODO.md` を iPhone PWA から読み書きできるようにする
+# TODO の Drive 同期と Notion 手動同期を追加
 
-## 背景
-現在の `メモ / TODO` 機能は `localStorage` 保存のため、iPhone の PWA (`music-player-from-drive.vercel.app`) から使っても、Mac の Ableton 制作環境や他デバイスと状態を共有できない。
+## 概要
 
-制作運用としては、Ableton Project と 1 対 1 対応している Google Drive フォルダを正本にし、そのフォルダ内の `TODO.md` をこのアプリから直接読み書きしたい。
+- フォルダごとの TODO を Google Drive 上の `TODO.md` と同期できるようにする
+- 追加で、ローカル TODO を Notion の専用セクションへ手動で読込・保存できるようにする
+- PWA 利用時の TODO 運用と、セッションをまたぐ引き継ぎを改善する
 
-例:
-- ローカル: `/Users/YudukiHotaru/Music/Ableton Projects/夜が落ちたら Project`
-- Drive: `1LsJnrY3DQYFWYDxNjWfHyoD26gV-IFdm`
+## 変更内容
 
-## 目的
-- iPhone PWA から、選択中の Drive フォルダ内にある `TODO.md` を確認・更新できるようにする
-- TODO の正本を Google Drive 側に移し、Mac / iPhone 間で同じ内容を扱えるようにする
+- `MemoModal` で選択中フォルダの `TODO.md` を自動読込・再読込・保存できるように変更
+- Google Drive 上の `TODO.md` を検索・読込・新規作成・更新する処理を追加
+- ローカル TODO を Notion の専用セクションへ手動同期する処理を追加
+- Notion 連携用の API エンドポイントを追加
+- 開発環境でも Notion API を確認しやすいように Vite 側のミドルウェアを追加
+- README に Notion 同期の設定方法と確認手順を追記
 
-## 要件
-- 選択中フォルダごとに `TODO.md` を検索できる
-- `TODO.md` が存在すれば読み込んでタスク一覧へ反映できる
-- `TODO.md` が存在しなければ初回保存時に新規作成できる
-- 編集後に同じ `TODO.md` を上書き保存できる
-- Markdown チェックリスト形式 (`- [ ] ...`, `- [x] ...`) を扱える
-- DTM 向けテンプレート追加機能は維持する
-- iPhone PWA で成立する UX にする
+## 使い方
 
-## 完了条件
-- `メモ` 画面を開くと、選択中フォルダの `TODO.md` を自動読込する
-- `Driveに保存` で Drive 上の `TODO.md` が更新される
-- `TODO.md` が無いフォルダでも初回保存で生成される
-- iPhone PWA 前提の利用フローを README に記載する
+- 通常どおり曲フォルダを選んで `メモ` を開く
+- Drive 側の `TODO.md` は自動で読まれる
+- `Driveに保存` で Drive 上の `TODO.md` を更新する
+- `Notionへ保存` で現在の TODO を Notion の `App TODO Sync: <フォルダ名>` に退避する
+- `Notionから読込` で Notion 側のチェックリストをアプリへ戻す
+
+## 補足
+
+- Notion 側はページ全体ではなく、専用セクションのみを同期対象にしている
+- Notion 連携は環境変数が設定されている場合のみ有効
+- API キーやページ ID などの機密情報はリポジトリに含めていない
+
+## テスト
+
+- [x] `npm test`
+- [x] 実 Notion ページに対する保存 / 読込 / 後片付け確認
+- [ ] `npm run build`
+
+## ビルド未確認の理由
+
+- ローカル環境で既存の TypeScript 型定義不足により `npm run build` が失敗する状態
+- 今回の変更とは別件で、`babel__core` などの型定義解決が必要

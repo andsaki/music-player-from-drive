@@ -34,6 +34,11 @@ import {
   readTodoFile,
   updateTodoFile,
 } from "../utils/driveTodo";
+import {
+  isNotionSyncConfigured,
+  loadTasksFromNotion,
+  saveTasksToNotion,
+} from "../utils/notionTodo";
 
 const isAuthorizationError = (error: unknown) => {
   if (axios.isAxiosError(error)) {
@@ -64,6 +69,8 @@ const MemoModal: React.FC<MemoModalProps> = ({
   const [todoFileId, setTodoFileId] = useState<string | null>(null);
   const [isLoadingTodo, setIsLoadingTodo] = useState(false);
   const [isSavingTodo, setIsSavingTodo] = useState(false);
+  const [isSyncingNotion, setIsSyncingNotion] = useState(false);
+  const notionSyncEnabled = isNotionSyncConfigured();
 
   const cacheTasksLocally = useCallback((currentTasks: Task[]) => {
     if (!folderId || folderId === "all") {
@@ -108,7 +115,11 @@ const MemoModal: React.FC<MemoModalProps> = ({
     if (!accessToken) {
       setTasks(loadTasksFromLocalCache());
       setTodoFileId(null);
-      setErrorMessage("Drive と同期するには再ログインが必要です。");
+      setErrorMessage(
+        notionSyncEnabled
+          ? "Drive と同期するには再ログインが必要です。Notion 同期は引き続き使えます。"
+          : "Drive と同期するには再ログインが必要です。",
+      );
       return;
     }
 
@@ -149,7 +160,7 @@ const MemoModal: React.FC<MemoModalProps> = ({
     };
 
     void loadTodo();
-  }, [open, folderId, accessToken, onAuthError, cacheTasksLocally, loadTasksFromLocalCache]);
+  }, [open, folderId, accessToken, notionSyncEnabled, onAuthError, cacheTasksLocally, loadTasksFromLocalCache]);
 
   const handleAddTask = () => {
     if (newTask.trim() === "") {
@@ -282,6 +293,53 @@ const MemoModal: React.FC<MemoModalProps> = ({
     }
   };
 
+  const handleLoadFromNotion = async () => {
+    if (folderId === "all" || !notionSyncEnabled) {
+      return;
+    }
+
+    setIsSyncingNotion(true);
+    setFeedbackMessage(null);
+    setErrorMessage(null);
+
+    try {
+      const result = await loadTasksFromNotion(folderName);
+      setTasks(result.tasks);
+      cacheTasksLocally(result.tasks);
+      setFeedbackMessage(
+        result.found
+          ? "Notion の App TODO Sync から読み込みました。"
+          : "Notion 側に App TODO Sync がまだ無いため、空の TODO を表示しています。",
+      );
+    } catch (error) {
+      console.error("Failed to load TODO from Notion", error);
+      setErrorMessage(error instanceof Error ? error.message : "Notion から TODO を読み込めませんでした。");
+    } finally {
+      setIsSyncingNotion(false);
+    }
+  };
+
+  const handleSaveToNotion = async () => {
+    if (folderId === "all" || !notionSyncEnabled) {
+      return;
+    }
+
+    setIsSyncingNotion(true);
+    setFeedbackMessage(null);
+    setErrorMessage(null);
+
+    try {
+      await saveTasksToNotion(folderName, tasks);
+      cacheTasksLocally(tasks);
+      setFeedbackMessage("Notion の App TODO Sync に保存しました。");
+    } catch (error) {
+      console.error("Failed to save TODO to Notion", error);
+      setErrorMessage(error instanceof Error ? error.message : "Notion への保存に失敗しました。");
+    } finally {
+      setIsSyncingNotion(false);
+    }
+  };
+
   const handleClose = () => {
     onClose();
   };
@@ -295,19 +353,31 @@ const MemoModal: React.FC<MemoModalProps> = ({
             <Alert severity="warning">TODO を使うには「All Folders」以外の曲フォルダを選択してください。</Alert>
           ) : (
             <Alert severity="info" variant="outlined">
-              この画面は Drive フォルダ内の {TODO_FILE_NAME} を読み書きします。iPhone PWA と Mac で同じ TODO を共有できます。
+              この画面は Drive フォルダ内の {TODO_FILE_NAME} を読み書きします。
+              {notionSyncEnabled ? " 必要に応じて Notion の App TODO Sync と手動同期できます。" : " iPhone PWA と Mac で同じ TODO を共有できます。"}
+            </Alert>
+          )}
+          {folderId !== "all" && notionSyncEnabled && (
+            <Alert severity="info">
+              Drive は自動読込と保存、Notion は手動の読込と保存で使い分けます。Notion 側では `App TODO Sync: {folderName}` のトグルだけを更新します。
             </Alert>
           )}
           {feedbackMessage && <Alert severity="success">{feedbackMessage}</Alert>}
           {errorMessage && <Alert severity="error">{errorMessage}</Alert>}
           <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
-            <Button onClick={handleApplyDtmTemplate} variant="outlined" disabled={folderId === "all" || isLoadingTodo || isSavingTodo}>
+            <Button onClick={handleApplyDtmTemplate} variant="outlined" disabled={folderId === "all" || isLoadingTodo || isSavingTodo || isSyncingNotion}>
               DTMテンプレート追加
             </Button>
-            <Button onClick={handleReloadFromDrive} variant="outlined" disabled={folderId === "all" || isLoadingTodo || isSavingTodo || !accessToken}>
+            <Button onClick={handleReloadFromDrive} variant="outlined" disabled={folderId === "all" || isLoadingTodo || isSavingTodo || isSyncingNotion || !accessToken}>
               Driveから再読込
             </Button>
-            <Button onClick={handleCopyMarkdown} variant="outlined" disabled={folderId === "all" || isLoadingTodo}>
+            <Button onClick={handleLoadFromNotion} variant="outlined" disabled={folderId === "all" || isLoadingTodo || isSavingTodo || isSyncingNotion || !notionSyncEnabled}>
+              {isSyncingNotion ? "Notion同期中..." : "Notionから読込"}
+            </Button>
+            <Button onClick={handleSaveToNotion} variant="outlined" disabled={folderId === "all" || isLoadingTodo || isSavingTodo || isSyncingNotion || !notionSyncEnabled}>
+              {isSyncingNotion ? "Notion同期中..." : "Notionへ保存"}
+            </Button>
+            <Button onClick={handleCopyMarkdown} variant="outlined" disabled={folderId === "all" || isLoadingTodo || isSyncingNotion}>
               Markdownコピー
             </Button>
           </Stack>
@@ -334,9 +404,9 @@ const MemoModal: React.FC<MemoModalProps> = ({
                   handleAddTask();
                 }
               }}
-              disabled={folderId === "all"}
+              disabled={folderId === "all" || isSyncingNotion}
             />
-            <Button onClick={handleAddTask} variant="contained" sx={{ mt: 2, mb: 2 }} disabled={folderId === "all"}>
+            <Button onClick={handleAddTask} variant="contained" sx={{ mt: 2, mb: 2 }} disabled={folderId === "all" || isSyncingNotion}>
               Add Task
             </Button>
             <Divider />
@@ -359,7 +429,7 @@ const MemoModal: React.FC<MemoModalProps> = ({
                           aria-label="delete"
                           onClick={() => handleDeleteTask(task.id)}
                           sx={{ p: 0 }}
-                          disabled={folderId === "all"}
+                          disabled={folderId === "all" || isSyncingNotion}
                         >
                           <DeleteIcon />
                         </IconButton>
@@ -373,7 +443,7 @@ const MemoModal: React.FC<MemoModalProps> = ({
                           tabIndex={-1}
                           disableRipple
                           onChange={() => handleToggleTask(task.id)}
-                          disabled={folderId === "all"}
+                          disabled={folderId === "all" || isSyncingNotion}
                         />
                       </ListItemIcon>
                       <ListItemText
@@ -393,8 +463,8 @@ const MemoModal: React.FC<MemoModalProps> = ({
         )}
       </DialogContent>
       <DialogActions>
-        <Button onClick={handleClose} disabled={isSavingTodo}>Cancel</Button>
-        <Button onClick={handleSaveMemo} variant="contained" disabled={folderId === "all" || isLoadingTodo || isSavingTodo}>
+        <Button onClick={handleClose} disabled={isSavingTodo || isSyncingNotion}>Cancel</Button>
+        <Button onClick={handleSaveMemo} variant="contained" disabled={folderId === "all" || isLoadingTodo || isSavingTodo || isSyncingNotion}>
           {isSavingTodo ? "Driveに保存中..." : "Driveに保存"}
         </Button>
       </DialogActions>
