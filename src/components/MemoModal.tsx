@@ -129,9 +129,14 @@ const MemoModal: React.FC<MemoModalProps> = ({
         const todoFile = await findTodoFileInFolder(accessToken, folderId);
 
         if (!todoFile) {
-          setTasks([]);
+          const cachedTasks = loadTasksFromLocalCache();
+          setTasks(cachedTasks);
           setTodoFileId(null);
-          setFeedbackMessage(`このフォルダには ${TODO_FILE_NAME} がまだありません。保存すると新規作成します。`);
+          setFeedbackMessage(
+            cachedTasks.length > 0
+              ? `このフォルダには ${TODO_FILE_NAME} がまだありません。端末内の下書きを表示しています。保存すると新規作成します。`
+              : `このフォルダには ${TODO_FILE_NAME} がまだありません。保存すると新規作成します。`,
+          );
           return;
         }
 
@@ -223,9 +228,14 @@ const MemoModal: React.FC<MemoModalProps> = ({
     try {
       const todoFile = await findTodoFileInFolder(accessToken, folderId);
       if (!todoFile) {
-        setTasks([]);
+        const cachedTasks = loadTasksFromLocalCache();
+        setTasks(cachedTasks);
         setTodoFileId(null);
-        setFeedbackMessage(`このフォルダには ${TODO_FILE_NAME} がありません。`);
+        setFeedbackMessage(
+          cachedTasks.length > 0
+            ? `このフォルダには ${TODO_FILE_NAME} がありません。端末内の下書きを表示しています。`
+            : `このフォルダには ${TODO_FILE_NAME} がありません。`,
+        );
         return;
       }
 
