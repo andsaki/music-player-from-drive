@@ -29,7 +29,12 @@ import { CustomAudioPlayer } from "./components/CustomAudioPlayer.tsx";
 import { MusicListSkeleton, TrackSwitchingIndicator, RetroLoadingSpinner } from "./components/SkeletonScreen.tsx";
 import { type DriveFile, type FolderOption } from "./types";
 import { getCachedMusicFiles, cacheMusicFiles } from "./utils/cache";
-import { ALL_FOLDERS_OPTION, LOCAL_STORAGE_KEYS } from "./constants";
+import {
+  ALL_FOLDERS_OPTION,
+  GOOGLE_DRIVE_SCOPE,
+  GOOGLE_TOKEN_SCOPE_VERSION,
+  LOCAL_STORAGE_KEYS,
+} from "./constants";
 import { generateShareLink, copyToClipboard } from "./utils";
 
 // 遅延ロード: モーダルコンポーネントは必要になるまでロードしない
@@ -64,6 +69,14 @@ function App() {
     // localStorageから初期値を読み込む（ブラウザを閉じても保持される）
     const token = localStorage.getItem(LOCAL_STORAGE_KEYS.GOOGLE_ACCESS_TOKEN);
     const expiry = localStorage.getItem(LOCAL_STORAGE_KEYS.TOKEN_EXPIRY);
+    const scopeVersion = localStorage.getItem(LOCAL_STORAGE_KEYS.TOKEN_SCOPE_VERSION);
+
+    if (scopeVersion !== GOOGLE_TOKEN_SCOPE_VERSION) {
+      localStorage.removeItem(LOCAL_STORAGE_KEYS.GOOGLE_ACCESS_TOKEN);
+      localStorage.removeItem(LOCAL_STORAGE_KEYS.TOKEN_EXPIRY);
+      localStorage.removeItem(LOCAL_STORAGE_KEYS.TOKEN_SCOPE_VERSION);
+      return null;
+    }
 
     // トークンの有効期限をチェック
     if (token && expiry) {
@@ -76,6 +89,7 @@ function App() {
         console.log('[Security] Access token expired, clearing from storage');
         localStorage.removeItem(LOCAL_STORAGE_KEYS.GOOGLE_ACCESS_TOKEN);
         localStorage.removeItem(LOCAL_STORAGE_KEYS.TOKEN_EXPIRY);
+        localStorage.removeItem(LOCAL_STORAGE_KEYS.TOKEN_SCOPE_VERSION);
         return null;
       }
     }
@@ -176,11 +190,12 @@ function App() {
 
       localStorage.setItem(LOCAL_STORAGE_KEYS.GOOGLE_ACCESS_TOKEN, tokenResponse.access_token);
       localStorage.setItem(LOCAL_STORAGE_KEYS.TOKEN_EXPIRY, expiryTime.toString());
+      localStorage.setItem(LOCAL_STORAGE_KEYS.TOKEN_SCOPE_VERSION, GOOGLE_TOKEN_SCOPE_VERSION);
 
       console.log(`[Security] Token will expire at: ${new Date(expiryTime).toLocaleString()}`);
     },
     onError: (errorResponse) => console.log("Login failed! Error:", errorResponse),
-    scope: "https://www.googleapis.com/auth/drive.readonly",
+    scope: GOOGLE_DRIVE_SCOPE,
     prompt: '', // 既存のGoogleセッションを使用（アカウント選択画面をスキップ）
   });
 
@@ -190,6 +205,7 @@ function App() {
     // セキュリティのため、トークンと有効期限を完全に削除
     localStorage.removeItem(LOCAL_STORAGE_KEYS.GOOGLE_ACCESS_TOKEN);
     localStorage.removeItem(LOCAL_STORAGE_KEYS.TOKEN_EXPIRY);
+    localStorage.removeItem(LOCAL_STORAGE_KEYS.TOKEN_SCOPE_VERSION);
     setAllFetchedMusicFiles([]);
     setMusicFiles([]);
     setSelectedFile(null);
@@ -609,6 +625,8 @@ function App() {
               folderOptions.find((option: FolderOption) => option.id === currentFilterFolderId)
                 ?.name || ALL_FOLDERS_OPTION.name
             }
+            accessToken={accessToken}
+            onAuthError={handleLogout}
           />
         </Suspense>
         {/* 認証されている場合の表示ロジック */}
