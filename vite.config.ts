@@ -11,8 +11,8 @@ const notionDevMiddleware = () => ({
         use: (
           path: string,
           handler: (
-            req: import("node:http").IncomingMessage,
-            res: import("node:http").ServerResponse,
+            req: { method?: string; url?: string; on: (event: string, callback: (chunk?: unknown) => void) => void },
+            res: { statusCode: number; setHeader: (name: string, value: string) => void; end: (body: string) => void },
             next: () => void,
           ) => void | Promise<void>,
         ) => void;
