@@ -21,12 +21,9 @@ import axios from "axios";
 import { TODO_FILE_NAME, LOCAL_STORAGE_KEYS } from "../constants";
 import { type MemoModalProps, type Task } from "../types";
 import {
-  addUniqueTasks,
   createTask,
-  DTM_TASK_TEMPLATE,
   parseTasksFromText,
   sortTasks,
-  tasksToMarkdown,
 } from "../utils/tasks";
 import {
   createTodoFile,
@@ -198,24 +195,6 @@ const MemoModal: React.FC<MemoModalProps> = ({
     setErrorMessage(null);
   };
 
-  const handleApplyDtmTemplate = () => {
-    const newTasks = addUniqueTasks(tasks, DTM_TASK_TEMPLATE);
-    setTasks(newTasks);
-    cacheTasksLocally(newTasks);
-    setFeedbackMessage("DTM用テンプレートを追加しました。");
-    setErrorMessage(null);
-  };
-
-  const handleCopyMarkdown = async () => {
-    try {
-      await navigator.clipboard.writeText(tasksToMarkdown(folderName, tasks));
-      setFeedbackMessage("Markdown形式でコピーしました。");
-    } catch (error) {
-      console.error("Failed to copy tasks", error);
-      setErrorMessage("コピーに失敗しました。");
-    }
-  };
-
   const handleReloadFromDrive = async () => {
     if (!accessToken || folderId === "all") {
       return;
@@ -375,9 +354,6 @@ const MemoModal: React.FC<MemoModalProps> = ({
           {feedbackMessage && <Alert severity="success">{feedbackMessage}</Alert>}
           {errorMessage && <Alert severity="error">{errorMessage}</Alert>}
           <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
-            <Button onClick={handleApplyDtmTemplate} variant="outlined" disabled={folderId === "all" || isLoadingTodo || isSavingTodo || isSyncingNotion}>
-              DTMテンプレート追加
-            </Button>
             <Button onClick={handleReloadFromDrive} variant="outlined" disabled={folderId === "all" || isLoadingTodo || isSavingTodo || isSyncingNotion || !accessToken}>
               Driveから再読込
             </Button>
@@ -386,9 +362,6 @@ const MemoModal: React.FC<MemoModalProps> = ({
             </Button>
             <Button onClick={handleSaveToNotion} variant="outlined" disabled={folderId === "all" || isLoadingTodo || isSavingTodo || isSyncingNotion || !notionSyncEnabled}>
               {isSyncingNotion ? "Notion同期中..." : "Notionへ保存"}
-            </Button>
-            <Button onClick={handleCopyMarkdown} variant="outlined" disabled={folderId === "all" || isLoadingTodo || isSyncingNotion}>
-              Markdownコピー
             </Button>
           </Stack>
         </Stack>
