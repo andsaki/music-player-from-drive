@@ -5,6 +5,7 @@ import DialogContent from "@mui/material/DialogContent";
 import DialogActions from "@mui/material/DialogActions";
 import Alert from "@mui/material/Alert";
 import Button from "@mui/material/Button";
+import Snackbar from "@mui/material/Snackbar";
 import Stack from "@mui/material/Stack";
 import List from "@mui/material/List";
 import ListItem from "@mui/material/ListItem";
@@ -21,9 +22,7 @@ import axios from "axios";
 import { TODO_FILE_NAME, LOCAL_STORAGE_KEYS } from "../constants";
 import { type MemoModalProps, type Task } from "../types";
 import {
-  addUniqueTasks,
   createTask,
-  DTM_TASK_TEMPLATE,
   parseTasksFromText,
   sortTasks,
   tasksToMarkdown,
@@ -198,24 +197,6 @@ const MemoModal: React.FC<MemoModalProps> = ({
     setErrorMessage(null);
   };
 
-  const handleApplyDtmTemplate = () => {
-    const newTasks = addUniqueTasks(tasks, DTM_TASK_TEMPLATE);
-    setTasks(newTasks);
-    cacheTasksLocally(newTasks);
-    setFeedbackMessage("DTM用テンプレートを追加しました。");
-    setErrorMessage(null);
-  };
-
-  const handleCopyMarkdown = async () => {
-    try {
-      await navigator.clipboard.writeText(tasksToMarkdown(folderName, tasks));
-      setFeedbackMessage("Markdown形式でコピーしました。");
-    } catch (error) {
-      console.error("Failed to copy tasks", error);
-      setErrorMessage("コピーに失敗しました。");
-    }
-  };
-
   const handleReloadFromDrive = async () => {
     if (!accessToken || folderId === "all") {
       return;
@@ -354,131 +335,151 @@ const MemoModal: React.FC<MemoModalProps> = ({
     onClose();
   };
 
+  const handleFeedbackClose = (_event?: React.SyntheticEvent | Event, reason?: string) => {
+    if (reason === "clickaway") {
+      return;
+    }
+
+    setFeedbackMessage(null);
+  };
+
+  const handleErrorClose = (_event?: React.SyntheticEvent | Event, reason?: string) => {
+    if (reason === "clickaway") {
+      return;
+    }
+
+    setErrorMessage(null);
+  };
+
   return (
-    <Dialog open={open} onClose={handleClose} fullWidth maxWidth="sm" disableEnforceFocus>
-      <DialogTitle>Tasks for Folder: {folderName}</DialogTitle>
-      <DialogContent>
-        <Stack spacing={1.5} sx={{ mb: 2, mt: 1 }}>
-          {folderId === "all" ? (
-            <Alert severity="warning">TODO を使うには「All Folders」以外の曲フォルダを選択してください。</Alert>
+    <>
+      <Dialog open={open} onClose={handleClose} fullWidth maxWidth="sm" disableEnforceFocus>
+        <DialogTitle>Tasks for Folder: {folderName}</DialogTitle>
+        <DialogContent>
+          <Stack spacing={1.5} sx={{ mb: 2, mt: 1 }}>
+            {folderId === "all" && (
+              <Alert severity="warning">TODO を使うには「All Folders」以外の曲フォルダを選択してください。</Alert>
+            )}
+            <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
+              <Button onClick={handleReloadFromDrive} variant="outlined" disabled={folderId === "all" || isLoadingTodo || isSavingTodo || isSyncingNotion || !accessToken}>
+                Driveから再読込
+              </Button>
+              <Button onClick={handleLoadFromNotion} variant="outlined" disabled={folderId === "all" || isLoadingTodo || isSavingTodo || isSyncingNotion || !notionSyncEnabled}>
+                {isSyncingNotion ? "Notion同期中..." : "Notionから読込"}
+              </Button>
+              <Button onClick={handleSaveToNotion} variant="outlined" disabled={folderId === "all" || isLoadingTodo || isSavingTodo || isSyncingNotion || !notionSyncEnabled}>
+                {isSyncingNotion ? "Notion同期中..." : "Notionへ保存"}
+              </Button>
+            </Stack>
+          </Stack>
+          {isLoadingTodo ? (
+            <Stack direction="row" spacing={1} alignItems="center" justifyContent="center" sx={{ py: 6 }}>
+              <CircularProgress size={24} />
+              <span>Drive から TODO を読み込み中...</span>
+            </Stack>
           ) : (
-            <Alert severity="info" variant="outlined">
-              この画面は Drive フォルダ内の {TODO_FILE_NAME} を読み書きします。
-              {notionSyncEnabled ? " 必要に応じて Notion の App TODO Sync と手動同期できます。" : " iPhone PWA と Mac で同じ TODO を共有できます。"}
-            </Alert>
-          )}
-          {folderId !== "all" && notionSyncEnabled && (
-            <Alert severity="info">
-              Drive は自動読込と保存、Notion は手動の読込と保存で使い分けます。Notion 側では `App TODO Sync: {folderName}` のトグルだけを更新します。
-            </Alert>
-          )}
-          {feedbackMessage && <Alert severity="success">{feedbackMessage}</Alert>}
-          {errorMessage && <Alert severity="error">{errorMessage}</Alert>}
-          <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
-            <Button onClick={handleApplyDtmTemplate} variant="outlined" disabled={folderId === "all" || isLoadingTodo || isSavingTodo || isSyncingNotion}>
-              DTMテンプレート追加
-            </Button>
-            <Button onClick={handleReloadFromDrive} variant="outlined" disabled={folderId === "all" || isLoadingTodo || isSavingTodo || isSyncingNotion || !accessToken}>
-              Driveから再読込
-            </Button>
-            <Button onClick={handleLoadFromNotion} variant="outlined" disabled={folderId === "all" || isLoadingTodo || isSavingTodo || isSyncingNotion || !notionSyncEnabled}>
-              {isSyncingNotion ? "Notion同期中..." : "Notionから読込"}
-            </Button>
-            <Button onClick={handleSaveToNotion} variant="outlined" disabled={folderId === "all" || isLoadingTodo || isSavingTodo || isSyncingNotion || !notionSyncEnabled}>
-              {isSyncingNotion ? "Notion同期中..." : "Notionへ保存"}
-            </Button>
-            <Button onClick={handleCopyMarkdown} variant="outlined" disabled={folderId === "all" || isLoadingTodo || isSyncingNotion}>
-              Markdownコピー
-            </Button>
-          </Stack>
-        </Stack>
-        {isLoadingTodo ? (
-          <Stack direction="row" spacing={1} alignItems="center" justifyContent="center" sx={{ py: 6 }}>
-            <CircularProgress size={24} />
-            <span>Drive から TODO を読み込み中...</span>
-          </Stack>
-        ) : (
-          <>
-            <TextField
-              autoFocus
-              margin="dense"
-              label="Add a new task"
-              type="text"
-              fullWidth
-              variant="outlined"
-              value={newTask}
-              onChange={(event) => setNewTask(event.target.value)}
-              placeholder="例: サビのリードを差し替える / 低域を整理する"
-              onKeyDown={(event) => {
-                if (event.key === "Enter") {
-                  handleAddTask();
-                }
-              }}
-              disabled={folderId === "all" || isSyncingNotion}
-            />
-            <Button onClick={handleAddTask} variant="contained" sx={{ mt: 2, mb: 2 }} disabled={folderId === "all" || isSyncingNotion}>
-              Add Task
-            </Button>
-            <Divider />
-            <List>
-              <AnimatePresence>
-                {tasks.map((task, index) => (
-                  <motion.div
-                    key={task.id}
-                    layout
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: 10 }}
-                    transition={{ duration: 0.3 }}
-                  >
-                    <ListItem
-                      sx={{ my: 2 }}
-                      secondaryAction={
-                        <IconButton
-                          edge="end"
-                          aria-label="delete"
-                          onClick={() => handleDeleteTask(task.id)}
-                          sx={{ p: 0 }}
-                          disabled={folderId === "all" || isSyncingNotion}
-                        >
-                          <DeleteIcon />
-                        </IconButton>
-                      }
-                      disablePadding
+            <>
+              <TextField
+                autoFocus
+                margin="dense"
+                label="Add a new task"
+                type="text"
+                fullWidth
+                variant="outlined"
+                value={newTask}
+                onChange={(event) => setNewTask(event.target.value)}
+                placeholder="例: サビのリードを差し替える / 低域を整理する"
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") {
+                    handleAddTask();
+                  }
+                }}
+                disabled={folderId === "all" || isSyncingNotion}
+              />
+              <Button onClick={handleAddTask} variant="contained" sx={{ mt: 2, mb: 2 }} disabled={folderId === "all" || isSyncingNotion}>
+                Add Task
+              </Button>
+              <Divider />
+              <List>
+                <AnimatePresence>
+                  {tasks.map((task, index) => (
+                    <motion.div
+                      key={task.id}
+                      layout
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 10 }}
+                      transition={{ duration: 0.3 }}
                     >
-                      <ListItemIcon>
-                        <Checkbox
-                          edge="start"
-                          checked={task.completed}
-                          tabIndex={-1}
-                          disableRipple
-                          onChange={() => handleToggleTask(task.id)}
-                          disabled={folderId === "all" || isSyncingNotion}
+                      <ListItem
+                        sx={{ my: 2 }}
+                        secondaryAction={
+                          <IconButton
+                            edge="end"
+                            aria-label="delete"
+                            onClick={() => handleDeleteTask(task.id)}
+                            sx={{ p: 0 }}
+                            disabled={folderId === "all" || isSyncingNotion}
+                          >
+                            <DeleteIcon />
+                          </IconButton>
+                        }
+                        disablePadding
+                      >
+                        <ListItemIcon>
+                          <Checkbox
+                            edge="start"
+                            checked={task.completed}
+                            tabIndex={-1}
+                            disableRipple
+                            onChange={() => handleToggleTask(task.id)}
+                            disabled={folderId === "all" || isSyncingNotion}
+                          />
+                        </ListItemIcon>
+                        <ListItemText
+                          primary={task.text}
+                          sx={{
+                            textDecoration: task.completed ? "line-through" : "none",
+                            mr: 5,
+                          }}
                         />
-                      </ListItemIcon>
-                      <ListItemText
-                        primary={task.text}
-                        sx={{
-                          textDecoration: task.completed ? "line-through" : "none",
-                          mr: 5,
-                        }}
-                      />
-                    </ListItem>
-                    {index < tasks.length - 1 && <Divider />}
-                  </motion.div>
-                ))}
-              </AnimatePresence>
-            </List>
-          </>
-        )}
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={handleClose} disabled={isSavingTodo || isSyncingNotion}>Cancel</Button>
-        <Button onClick={handleSaveMemo} variant="contained" disabled={folderId === "all" || isLoadingTodo || isSavingTodo || isSyncingNotion}>
-          {isSavingTodo ? "Driveに保存中..." : "Driveに保存"}
-        </Button>
-      </DialogActions>
-    </Dialog>
+                      </ListItem>
+                      {index < tasks.length - 1 && <Divider />}
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
+              </List>
+            </>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleClose} disabled={isSavingTodo || isSyncingNotion}>Cancel</Button>
+          <Button onClick={handleSaveMemo} variant="contained" disabled={folderId === "all" || isLoadingTodo || isSavingTodo || isSyncingNotion}>
+            {isSavingTodo ? "Driveに保存中..." : "Driveに保存"}
+          </Button>
+        </DialogActions>
+      </Dialog>
+      <Snackbar
+        open={feedbackMessage !== null}
+        autoHideDuration={4000}
+        onClose={handleFeedbackClose}
+        anchorOrigin={{ vertical: "top", horizontal: "center" }}
+      >
+        <Alert onClose={handleFeedbackClose} severity="success" variant="filled" sx={{ width: "100%" }}>
+          {feedbackMessage}
+        </Alert>
+      </Snackbar>
+      <Snackbar
+        open={errorMessage !== null}
+        autoHideDuration={5000}
+        onClose={handleErrorClose}
+        anchorOrigin={{ vertical: "top", horizontal: "center" }}
+      >
+        <Alert onClose={handleErrorClose} severity="error" variant="filled" sx={{ width: "100%" }}>
+          {errorMessage}
+        </Alert>
+      </Snackbar>
+    </>
   );
 };
 
