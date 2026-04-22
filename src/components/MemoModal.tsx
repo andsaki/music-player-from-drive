@@ -53,6 +53,51 @@ const isAuthorizationError = (error: unknown) => {
 
 const getMemoStorageKey = (folderId: string) => `${LOCAL_STORAGE_KEYS.USER_MEMO_PREFIX}${folderId}`;
 
+const memoSnackbarSx = {
+  top: "calc(64px + env(safe-area-inset-top)) !important",
+  zIndex: 1400,
+};
+
+const getMemoToastSx = (mode: "success" | "error") => ({
+  width: "100%",
+  minWidth: { xs: "min(92vw, 320px)", sm: "360px" },
+  alignItems: "center",
+  borderRadius: "14px",
+  border: mode === "success" ? "2px solid #00f5d4" : "2px solid #ff006e",
+  background:
+    mode === "success"
+      ? "linear-gradient(135deg, rgba(0, 245, 212, 0.92), rgba(0, 180, 216, 0.92))"
+      : "linear-gradient(135deg, rgba(255, 0, 110, 0.95), rgba(255, 77, 159, 0.95))",
+  backdropFilter: "blur(12px)",
+  boxShadow:
+    mode === "success"
+      ? "0 0 30px rgba(0, 245, 212, 0.45), 0 8px 32px rgba(0, 0, 0, 0.35)"
+      : "0 0 30px rgba(255, 0, 110, 0.55), 0 8px 32px rgba(0, 0, 0, 0.4)",
+  color: "#fff",
+  fontWeight: 700,
+  letterSpacing: "0.01em",
+  textShadow: "0 2px 10px rgba(0, 0, 0, 0.28)",
+  "& .MuiAlert-message": {
+    width: "100%",
+    py: 0.25,
+  },
+  "& .MuiAlert-icon": {
+    color: "#fbf8cc",
+    opacity: 1,
+  },
+  "& .MuiAlert-action": {
+    pt: 0.5,
+  },
+  "& .MuiIconButton-root": {
+    color: "#fff",
+    transition: "all 0.25s ease",
+    "&:hover": {
+      background: "rgba(255, 255, 255, 0.12)",
+      transform: "scale(1.08)",
+    },
+  },
+});
+
 const MemoModal: React.FC<MemoModalProps> = ({
   open,
   onClose,
@@ -464,8 +509,9 @@ const MemoModal: React.FC<MemoModalProps> = ({
         autoHideDuration={4000}
         onClose={handleFeedbackClose}
         anchorOrigin={{ vertical: "top", horizontal: "center" }}
+        sx={memoSnackbarSx}
       >
-        <Alert onClose={handleFeedbackClose} severity="success" variant="filled" sx={{ width: "100%" }}>
+        <Alert onClose={handleFeedbackClose} severity="success" variant="filled" sx={getMemoToastSx("success")}>
           {feedbackMessage}
         </Alert>
       </Snackbar>
@@ -474,8 +520,9 @@ const MemoModal: React.FC<MemoModalProps> = ({
         autoHideDuration={5000}
         onClose={handleErrorClose}
         anchorOrigin={{ vertical: "top", horizontal: "center" }}
+        sx={memoSnackbarSx}
       >
-        <Alert onClose={handleErrorClose} severity="error" variant="filled" sx={{ width: "100%" }}>
+        <Alert onClose={handleErrorClose} severity="error" variant="filled" sx={getMemoToastSx("error")}>
           {errorMessage}
         </Alert>
       </Snackbar>
