@@ -240,20 +240,14 @@ function App() {
 
   // フォルダフィルタリングの変更ハンドラ
   const handleFilterFolderChange = async (event: SelectChangeEvent<string>) => {
-    // 音楽を停止
-    setSelectedFile(null);
-    setPlayingLoading(false);
-    if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current.src = "";
-    }
+    const nextFolderId = event.target.value;
 
     // トランジション開始
     setIsTransitioning(true);
 
     // 少し待ってからフォルダ切り替え
     await new Promise(resolve => setTimeout(resolve, 150));
-    setCurrentFilterFolderId(event.target.value);
+    setCurrentFilterFolderId(nextFolderId);
 
     // トランジション完了
     await new Promise(resolve => setTimeout(resolve, 200));
@@ -344,7 +338,7 @@ function App() {
     } finally {
       setLoading(false); // フェッチ完了後にローディング状態をfalseに設定
     }
-  }, [accessToken, folderOptions]);
+  }, [accessToken, folderOptions, handleLogout]);
 
   // アクセストークンが取得できたら音楽ファイルをフェッチ
   useEffect(() => {
