@@ -126,26 +126,90 @@ export const MusicListSkeleton: React.FC<MusicListSkeletonProps> = ({ count = 5 
  * より目立つネオングロー効果を持つ
  */
 export const TrackSwitchingIndicator: React.FC = () => {
+  const fireflies = [
+    { x: [0, 8, -6, 0], y: [0, -10, -4, 0], delay: 0, duration: 2.2 },
+    { x: [0, -7, 10, 0], y: [0, -6, -12, 0], delay: 0.35, duration: 2.6 },
+    { x: [0, 5, -8, 0], y: [0, -12, -8, 0], delay: 0.7, duration: 2.4 },
+  ];
+
   return (
     <Box
-      component={motion.div}
-      initial={{ scale: 0.8, opacity: 0 }}
-      animate={{ scale: 1, opacity: 1 }}
-      exit={{ scale: 0.8, opacity: 0 }}
       sx={{
-        width: 20,
-        height: 20,
-        borderRadius: "50%",
-        border: "2px solid #ff006e",
-        borderTopColor: "transparent",
-        animation: "spin 0.8s linear infinite",
-        boxShadow: "0 0 15px rgba(255, 0, 110, 0.6)",
-        "@keyframes spin": {
-          "0%": { transform: "rotate(0deg)" },
-          "100%": { transform: "rotate(360deg)" },
-        },
+        position: "relative",
+        width: 36,
+        height: 24,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
       }}
-    />
+    >
+      <Box
+        component={motion.div}
+        initial={{ scale: 0.85, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        exit={{ scale: 0.85, opacity: 0 }}
+        sx={{
+          position: "absolute",
+          width: 14,
+          height: 14,
+          borderRadius: "50%",
+          background: "radial-gradient(circle, rgba(255, 248, 184, 0.95) 0%, rgba(255, 206, 84, 0.8) 45%, rgba(255, 206, 84, 0) 75%)",
+          filter: "blur(0.4px)",
+          boxShadow: "0 0 14px rgba(255, 214, 102, 0.75), 0 0 28px rgba(255, 214, 102, 0.35)",
+          animation: "fireflyPulse 1.2s ease-in-out infinite",
+          "@keyframes fireflyPulse": {
+            "0%, 100%": {
+              transform: "scale(0.75)",
+              opacity: 0.45,
+            },
+            "50%": {
+              transform: "scale(1)",
+              opacity: 1,
+            },
+          },
+        }}
+      />
+      {fireflies.map((firefly, index) => (
+        <Box
+          key={index}
+          component={motion.div}
+          animate={{
+            x: firefly.x,
+            y: firefly.y,
+            opacity: [0.2, 1, 0.35, 1, 0.2],
+            scale: [0.7, 1, 0.8, 1, 0.7],
+          }}
+          transition={{
+            duration: firefly.duration,
+            repeat: Infinity,
+            ease: "easeInOut",
+            delay: firefly.delay,
+          }}
+          sx={{
+            position: "absolute",
+            width: 6,
+            height: 6,
+            borderRadius: "50%",
+            background: "#fff6a3",
+            boxShadow: "0 0 10px rgba(255, 246, 163, 0.95), 0 0 18px rgba(255, 210, 90, 0.45)",
+          }}
+        />
+      ))}
+      <Box
+        component={motion.div}
+        animate={{ opacity: [0.18, 0.4, 0.18], scale: [0.95, 1.08, 0.95] }}
+        transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
+        sx={{
+          position: "absolute",
+          inset: 0,
+          borderRadius: "999px",
+          border: "1px solid rgba(255, 230, 130, 0.25)",
+          boxShadow: "0 0 18px rgba(255, 230, 130, 0.12)",
+          pointerEvents: "none",
+          transformOrigin: "center",
+        }}
+      />
+    </Box>
   );
 };
 
