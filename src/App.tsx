@@ -23,12 +23,12 @@ import CloudIcon from "@mui/icons-material/Cloud";
 import PlayArrowIcon from "@mui/icons-material/PlayArrow";
 // その他のライブラリ
 import { motion, AnimatePresence } from "framer-motion";
-import axios from "axios";
 import { useGoogleLogin } from "@react-oauth/google";
 import { CustomAudioPlayer } from "./components/CustomAudioPlayer.tsx";
 import { MusicListSkeleton, TrackSwitchingIndicator, RetroLoadingSpinner } from "./components/SkeletonScreen.tsx";
 import { type DriveFile, type FolderOption } from "./types";
 import { getCachedMusicFiles, cacheMusicFiles } from "./utils/cache";
+import { GoogleApiError, googleApiBlob, googleApiJson } from "./utils/googleApi";
 import {
   ALL_FOLDERS_OPTION,
   GOOGLE_DRIVE_SCOPE,
@@ -292,18 +292,18 @@ function App() {
 
         // キャッシュがない場合はAPIコール
         try {
-          const response = await axios.get("https://www.googleapis.com/drive/v3/files", {
-            headers: {
-              Authorization: `Bearer ${accessToken}`, // アクセストークンをヘッダーに含める
-            },
-            params: {
+          const response = await googleApiJson<{ files?: DriveFile[] }>(
+            "https://www.googleapis.com/drive/v3/files",
+            accessToken,
+            undefined,
+            {
               q: `'${folder.id}' in parents and mimeType contains 'audio/'`, // フォルダ内のオーディオファイルを検索
               fields: "files(id, name, mimeType, modifiedTime, parents)", // 取得するフィールドを指定
               supportsAllDrives: true,
               includeItemsFromAllDrives: true,
             },
-          });
-          const fetchedFiles = response.data.files || [];
+          );
+          const fetchedFiles = response.files || [];
           console.log(`[fetchMusicFiles] Fetched ${fetchedFiles.length} files from ${folder.name}`);
 
           // 取得したデータをキャッシュに保存（10分間有効）
@@ -311,7 +311,7 @@ function App() {
 
           allFiles.push(...fetchedFiles); // 取得したファイルをリストに追加
         } catch (folderError: unknown) {
-          if (axios.isAxiosError(folderError) && folderError.response?.status === 401) {
+          if (folderError instanceof GoogleApiError && folderError.status === 401) {
             // 認証エラーはすぐにログアウト
             setErrorMessage("認証エラー: 再度ログインしてください");
             handleLogout();
@@ -367,16 +367,13 @@ function App() {
     setPlayingLoading(true); // オーディオフェッチ開始時に再生ローディング状態をtrueに設定
     console.log("Playing loading set to true for file:", file.name);
     try {
-      const response = await axios.get(
-        `https://www.googleapis.com/drive/v3/files/${file.id}?alt=media`, // Google Driveからメディアコンテンツを取得
-        {
-          headers: {
-            Authorization: `Bearer ${accessToken}`, // アクセストークンをヘッダーに含める
-          },
-          responseType: "blob", // バイナリデータとしてレスポンスを受け取る
-        },
+      const audioBlob = await googleApiBlob(
+        `https://www.googleapis.com/drive/v3/files/${file.id}`, // Google Driveからメディアコンテンツを取得
+        accessToken ?? "",
+        undefined,
+        { alt: "media" },
       );
-      const audioUrl = URL.createObjectURL(response.data); // BlobからURLを作成
+      const audioUrl = URL.createObjectURL(audioBlob); // BlobからURLを作成
       if (audioRef.current) {
         audioRef.current.src = audioUrl; // audioソースを設定
         audioRef.current.play(); // 音楽を再生

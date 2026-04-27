@@ -18,7 +18,6 @@ import Divider from "@mui/material/Divider";
 import CircularProgress from "@mui/material/CircularProgress";
 import { motion, AnimatePresence } from "framer-motion";
 import DeleteIcon from "@mui/icons-material/Delete";
-import axios from "axios";
 import { TODO_FILE_NAME, LOCAL_STORAGE_KEYS } from "../constants";
 import { type MemoModalProps, type Task } from "../types";
 import {
@@ -38,10 +37,11 @@ import {
   loadTasksFromNotion,
   saveTasksToNotion,
 } from "../utils/notionTodo";
+import { GoogleApiError } from "../utils/googleApi";
 
 const isAuthorizationError = (error: unknown) => {
-  if (axios.isAxiosError(error)) {
-    return error.response?.status === 401 || error.response?.status === 403;
+  if (error instanceof GoogleApiError) {
+    return error.status === 401 || error.status === 403;
   }
 
   if (error instanceof Error) {

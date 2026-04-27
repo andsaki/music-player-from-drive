@@ -2,11 +2,9 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render } from "@testing-library/react";
 import { screen, waitFor } from "@testing-library/dom";
 import userEvent from "@testing-library/user-event";
-import axios from "axios";
 import FolderManagement from "./FolderManagement";
 
-vi.mock("axios");
-const mockedAxios = vi.mocked(axios);
+const mockedFetch = vi.fn<typeof fetch>();
 
 const defaultProps = {
   open: true,
@@ -17,6 +15,7 @@ const defaultProps = {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  vi.stubGlobal("fetch", mockedFetch);
 });
 
 describe("FolderManagement", () => {
@@ -26,9 +25,9 @@ describe("FolderManagement", () => {
   });
 
   it("正しいフォルダIDを入力すると folderName が自動入力されて Add が有効になる", async () => {
-    mockedAxios.get = vi.fn().mockResolvedValue({
-      data: { name: "My Music", mimeType: "application/vnd.google-apps.folder" },
-    });
+    mockedFetch.mockImplementation(async () =>
+      Response.json({ name: "My Music", mimeType: "application/vnd.google-apps.folder" }),
+    );
 
     render(<FolderManagement {...defaultProps} />);
     await userEvent.type(screen.getByLabelText("Folder ID"), "valid-folder-id");
@@ -40,11 +39,7 @@ describe("FolderManagement", () => {
   });
 
   it("存在しないフォルダIDを入力するとエラーが表示されて Add が無効のまま", async () => {
-    mockedAxios.get = vi.fn().mockRejectedValue({
-      isAxiosError: true,
-      response: { status: 404 },
-      message: "Not Found",
-    });
+    mockedFetch.mockImplementation(async () => new Response(null, { status: 404 }));
 
     render(<FolderManagement {...defaultProps} />);
     await userEvent.type(screen.getByLabelText("Folder ID"), "wrong-id");
@@ -58,9 +53,9 @@ describe("FolderManagement", () => {
   });
 
   it("フォルダIDがフォルダでない場合にエラーが表示される", async () => {
-    mockedAxios.get = vi.fn().mockResolvedValue({
-      data: { name: "Not a folder", mimeType: "application/vnd.google-apps.document" },
-    });
+    mockedFetch.mockImplementation(async () =>
+      Response.json({ name: "Not a folder", mimeType: "application/vnd.google-apps.document" }),
+    );
 
     render(<FolderManagement {...defaultProps} />);
     await userEvent.type(screen.getByLabelText("Folder ID"), "file-id-not-folder");
@@ -74,7 +69,7 @@ describe("FolderManagement", () => {
   });
 
   it("エラー時は Folder Name フィールドが入力不可", async () => {
-    mockedAxios.get = vi.fn().mockRejectedValue(new Error("Network Error"));
+    mockedFetch.mockRejectedValue(new Error("Network Error"));
 
     render(<FolderManagement {...defaultProps} />);
     await userEvent.type(screen.getByLabelText("Folder ID"), "bad-id");
@@ -85,9 +80,9 @@ describe("FolderManagement", () => {
   });
 
   it("Add クリックで onAddFolder が正しい引数で呼ばれる", async () => {
-    mockedAxios.get = vi.fn().mockResolvedValue({
-      data: { name: "My Music", mimeType: "application/vnd.google-apps.folder" },
-    });
+    mockedFetch.mockImplementation(async () =>
+      Response.json({ name: "My Music", mimeType: "application/vnd.google-apps.folder" }),
+    );
 
     render(<FolderManagement {...defaultProps} />);
     await userEvent.type(screen.getByLabelText("Folder ID"), "valid-id");

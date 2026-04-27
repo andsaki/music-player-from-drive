@@ -39,7 +39,7 @@ build: {
         'mui-icons': ['@mui/icons-material'],
         'vendor-react': ['react', 'react-dom'],
         'vendor-animation': ['framer-motion'],
-        'vendor-google': ['@react-oauth/google', 'gapi-script', 'axios'],
+        'vendor-google': ['@react-oauth/google', 'gapi-script'],
       },
     },
   },

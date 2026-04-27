@@ -1,5 +1,5 @@
-import axios from "axios";
 import { TODO_FILE_NAME } from "../constants";
+import { googleApiJson, googleApiText } from "./googleApi";
 
 export interface DriveTodoFile {
   id: string;
@@ -22,31 +22,26 @@ const buildMultipartBody = (metadata: Record<string, unknown>, content: string, 
 };
 
 export const findTodoFileInFolder = async (accessToken: string, folderId: string) => {
-  const response = await axios.get("https://www.googleapis.com/drive/v3/files", {
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-    },
-    params: {
+  const response = await googleApiJson<{ files?: DriveTodoFile[] }>(
+    "https://www.googleapis.com/drive/v3/files",
+    accessToken,
+    undefined,
+    {
       q: `'${folderId}' in parents and name='${TODO_FILE_NAME}' and trashed=false`,
       fields: "files(id,name,modifiedTime)",
       pageSize: 1,
       supportsAllDrives: true,
       includeItemsFromAllDrives: true,
     },
-  });
+  );
 
-  return (response.data.files?.[0] as DriveTodoFile | undefined) ?? null;
+  return response.files?.[0] ?? null;
 };
 
 export const readTodoFile = async (accessToken: string, fileId: string) => {
-  const response = await axios.get(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, {
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-    },
-    responseType: "text",
+  return googleApiText(`https://www.googleapis.com/drive/v3/files/${fileId}`, accessToken, undefined, {
+    alt: "media",
   });
-
-  return typeof response.data === "string" ? response.data : String(response.data);
 };
 
 export const createTodoFile = async (accessToken: string, folderId: string, content: string) => {
@@ -104,4 +99,3 @@ export const updateTodoFile = async (accessToken: string, fileId: string, conten
 
   return (await response.json()) as DriveTodoFile;
 };
-

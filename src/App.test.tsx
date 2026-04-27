@@ -1,23 +1,15 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import axios from "axios";
-import type { AxiosRequestConfig } from "axios";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import App from "./App";
 import { GOOGLE_TOKEN_SCOPE_VERSION, LOCAL_STORAGE_KEYS } from "./constants";
 import type { DriveFile } from "./types";
 
-vi.mock("axios");
 vi.mock("@react-oauth/google", () => ({
   useGoogleLogin: () => vi.fn(),
 }));
 
-const mockedAxios = vi.mocked(axios);
-type AxiosGetMock = {
-  mockImplementation: (
-    implementation: (url: string, config?: AxiosRequestConfig) => Promise<{ data: unknown }>,
-  ) => void;
-};
+const mockedFetch = vi.fn<typeof fetch>();
 
 const folderOneTrack: DriveFile = {
   id: "track-1",
@@ -38,6 +30,7 @@ const folderTwoTrack: DriveFile = {
 describe("App", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.stubGlobal("fetch", mockedFetch);
     localStorage.clear();
     localStorage.setItem(LOCAL_STORAGE_KEYS.GOOGLE_ACCESS_TOKEN, "test-token");
     localStorage.setItem(LOCAL_STORAGE_KEYS.TOKEN_EXPIRY, String(Date.now() + 60_000));
@@ -57,19 +50,20 @@ describe("App", () => {
   });
 
   it("再生中にフォルダのプルダウンを変更しても音楽を停止しない", async () => {
-    (mockedAxios.get as unknown as AxiosGetMock).mockImplementation(async (url, config) => {
-      if (String(url).includes("alt=media")) {
-        return { data: new Blob(["audio"]) };
+    mockedFetch.mockImplementation(async (input) => {
+      const url = String(input);
+      if (url.includes("alt=media")) {
+        return new Response("audio", { status: 200 });
       }
 
-      const q = String(config?.params?.q ?? "");
+      const q = new URL(url).searchParams.get("q") ?? "";
       if (q.includes("'folder-one'")) {
-        return { data: { files: [folderOneTrack] } };
+        return Response.json({ files: [folderOneTrack] });
       }
       if (q.includes("'folder-two'")) {
-        return { data: { files: [folderTwoTrack] } };
+        return Response.json({ files: [folderTwoTrack] });
       }
-      return { data: { files: [] } };
+      return Response.json({ files: [] });
     });
 
     const user = userEvent.setup();
