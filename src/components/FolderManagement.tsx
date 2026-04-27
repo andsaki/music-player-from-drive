@@ -7,9 +7,9 @@ import DialogActions from "@mui/material/DialogActions";
 import TextField from "@mui/material/TextField";
 import Button from "@mui/material/Button";
 import CircularProgress from "@mui/material/CircularProgress";
-import axios from "axios";
 import { type FolderManagementProps } from "../types";
 import { getCachedFolderMetadata, cacheFolderMetadata } from "../utils/cache";
+import { googleApiJson } from "../utils/googleApi";
 
 /**
  * フォルダ管理モーダルコンポーネント。
@@ -57,27 +57,24 @@ const FolderManagement: React.FC<FolderManagementProps> = ({
 
         // キャッシュがない場合はAPIコール
         try {
-          const response = await axios.get(
+          const response = await googleApiJson<{ name: string; mimeType: string }>(
             `https://www.googleapis.com/drive/v3/files/${folderId}`,
+            accessToken,
+            undefined,
             {
-              headers: {
-                Authorization: `Bearer ${accessToken}`,
-              },
-              params: {
-                fields: "name,mimeType",
-                supportsAllDrives: true,
-              },
+              fields: "name,mimeType",
+              supportsAllDrives: true,
             },
           );
 
           // 取得したデータをキャッシュに保存（30分間有効）
           cacheFolderMetadata(folderId, {
-            name: response.data.name,
-            mimeType: response.data.mimeType,
+            name: response.name,
+            mimeType: response.mimeType,
           });
 
-          if (response.data.mimeType === "application/vnd.google-apps.folder") {
-            setFolderName(response.data.name);
+          if (response.mimeType === "application/vnd.google-apps.folder") {
+            setFolderName(response.name);
           } else {
             setError("The provided ID is not a folder ID.");
             setFolderName("");

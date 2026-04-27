@@ -137,7 +137,7 @@ export default defineConfig(({ mode }) => {
             if (id.includes("framer-motion")) {
               return "vendor-animation";
             }
-            if (id.includes("@react-oauth/google") || id.includes("gapi-script") || id.includes("axios")) {
+            if (id.includes("@react-oauth/google") || id.includes("gapi-script")) {
               return "vendor-google";
             }
           },
