@@ -1018,9 +1018,14 @@ function App() {
         autoHideDuration={4000}
         onClose={handleSnackbarClose}
         message={snackbarMessage}
-        anchorOrigin={{ vertical: "top", horizontal: "center" }}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
         sx={{
-          top: "calc(64px + env(safe-area-inset-top)) !important",
+          bottom: selectedFile
+            ? {
+                xs: "calc(208px + env(safe-area-inset-bottom)) !important",
+                sm: "calc(176px + env(safe-area-inset-bottom)) !important",
+              }
+            : "calc(24px + env(safe-area-inset-bottom)) !important",
           zIndex: 1300,
         }}
         slotProps={{
