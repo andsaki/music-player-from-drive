@@ -20,11 +20,11 @@ import SettingsIcon from "@mui/icons-material/Settings";
 import ShareIcon from "@mui/icons-material/Share";
 import CloseIcon from "@mui/icons-material/Close";
 import CloudIcon from "@mui/icons-material/Cloud";
-import PlayArrowIcon from "@mui/icons-material/PlayArrow";
 // その他のライブラリ
 import { motion, AnimatePresence } from "framer-motion";
 import { useGoogleLogin } from "@react-oauth/google";
 import { CustomAudioPlayer } from "./components/CustomAudioPlayer.tsx";
+import { NowPlayingFirefly } from "./components/NowPlayingFirefly.tsx";
 import { MusicListSkeleton, TrackSwitchingIndicator, RetroLoadingSpinner } from "./components/SkeletonScreen.tsx";
 import { type DriveFile, type FolderOption } from "./types";
 import { getCachedMusicFiles, cacheMusicFiles } from "./utils/cache";
@@ -708,12 +708,7 @@ function App() {
                               }}
                             >
                               {isPlaying ? (
-                                <motion.div
-                                  animate={{ scale: [1, 1.2, 1] }}
-                                  transition={{ repeat: Infinity, duration: 1.5 }}
-                                >
-                                  <PlayArrowIcon sx={{ color: "#fff" }} />
-                                </motion.div>
+                                <NowPlayingFirefly loading={playingLoading} />
                               ) : (
                                 <MusicNoteIcon sx={{ color: "#ff006e" }} />
                               )}
