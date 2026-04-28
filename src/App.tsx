@@ -20,12 +20,16 @@ import SettingsIcon from "@mui/icons-material/Settings";
 import ShareIcon from "@mui/icons-material/Share";
 import CloseIcon from "@mui/icons-material/Close";
 import CloudIcon from "@mui/icons-material/Cloud";
-import PlayArrowIcon from "@mui/icons-material/PlayArrow";
 // その他のライブラリ
 import { motion, AnimatePresence } from "framer-motion";
 import { useGoogleLogin } from "@react-oauth/google";
 import { CustomAudioPlayer } from "./components/CustomAudioPlayer.tsx";
-import { MusicListSkeleton, TrackSwitchingIndicator, RetroLoadingSpinner } from "./components/SkeletonScreen.tsx";
+import { NowPlayingFirefly } from "./components/NowPlayingFirefly.tsx";
+import {
+  MusicListSkeleton,
+  TrackSwitchingIndicator,
+  RetroLoadingSpinner,
+} from "./components/SkeletonScreen.tsx";
 import { type DriveFile, type FolderOption } from "./types";
 import { getCachedMusicFiles, cacheMusicFiles } from "./utils/cache";
 import { GoogleApiError, googleApiBlob, googleApiJson } from "./utils/googleApi";
@@ -86,7 +90,7 @@ function App() {
         return token;
       } else {
         // トークンが期限切れ - セキュリティのため削除
-        console.log('[Security] Access token expired, clearing from storage');
+        console.log("[Security] Access token expired, clearing from storage");
         localStorage.removeItem(LOCAL_STORAGE_KEYS.GOOGLE_ACCESS_TOKEN);
         localStorage.removeItem(LOCAL_STORAGE_KEYS.TOKEN_EXPIRY);
         localStorage.removeItem(LOCAL_STORAGE_KEYS.TOKEN_SCOPE_VERSION);
@@ -196,7 +200,7 @@ function App() {
     },
     onError: (errorResponse) => console.log("Login failed! Error:", errorResponse),
     scope: GOOGLE_DRIVE_SCOPE,
-    prompt: '', // 既存のGoogleセッションを使用（アカウント選択画面をスキップ）
+    prompt: "", // 既存のGoogleセッションを使用（アカウント選択画面をスキップ）
   });
 
   // ログアウト処理
@@ -214,7 +218,7 @@ function App() {
       audioRef.current.pause();
       audioRef.current.src = "";
     }
-    console.log('[Security] User logged out, tokens cleared');
+    console.log("[Security] User logged out, tokens cleared");
   }, []);
 
   // トークンの有効期限を定期的にチェック（セキュリティ強化）
@@ -227,16 +231,15 @@ function App() {
       if (expiry) {
         const expiryTime = parseInt(expiry, 10);
         if (Date.now() >= expiryTime) {
-          console.log('[Security] Access token expired, logging out');
+          console.log("[Security] Access token expired, logging out");
           handleLogout();
-          setErrorMessage('セッションの有効期限が切れました。再度ログインしてください。');
+          setErrorMessage("セッションの有効期限が切れました。再度ログインしてください。");
         }
       }
     }, 60000); // 1分 = 60000ミリ秒
 
     return () => clearInterval(intervalId);
   }, [accessToken, handleLogout]);
-
 
   // フォルダフィルタリングの変更ハンドラ
   const handleFilterFolderChange = async (event: SelectChangeEvent<string>) => {
@@ -246,11 +249,11 @@ function App() {
     setIsTransitioning(true);
 
     // 少し待ってからフォルダ切り替え
-    await new Promise(resolve => setTimeout(resolve, 150));
+    await new Promise((resolve) => setTimeout(resolve, 150));
     setCurrentFilterFolderId(nextFolderId);
 
     // トランジション完了
-    await new Promise(resolve => setTimeout(resolve, 200));
+    await new Promise((resolve) => setTimeout(resolve, 200));
     setIsTransitioning(false);
   };
 
@@ -263,7 +266,7 @@ function App() {
     try {
       const allFiles: DriveFile[] = [];
       console.log(`[fetchMusicFiles] Starting fetch for ${folderOptions.length} folders`);
-      console.log('[fetchMusicFiles] Folder options:', folderOptions);
+      console.log("[fetchMusicFiles] Folder options:", folderOptions);
 
       // フォルダが追加されていない場合（'all'オプションのみの場合）の警告
       const foldersToFetch = folderOptions.filter(
@@ -271,8 +274,12 @@ function App() {
       );
 
       if (foldersToFetch.length === 0) {
-        console.warn("[fetchMusicFiles] No folders configured! Please add folders to fetch music files.");
-        setErrorMessage("フォルダが設定されていません。「フォルダを追加」ボタンからフォルダを追加してください。");
+        console.warn(
+          "[fetchMusicFiles] No folders configured! Please add folders to fetch music files.",
+        );
+        setErrorMessage(
+          "フォルダが設定されていません。「フォルダを追加」ボタンからフォルダを追加してください。",
+        );
         setAllFetchedMusicFiles([]); // 空の配列を設定
         return;
       }
@@ -285,7 +292,9 @@ function App() {
         // まずキャッシュをチェック
         const cachedFiles = getCachedMusicFiles(folder.id);
         if (cachedFiles) {
-          console.log(`[fetchMusicFiles] Using cached data for ${folder.name} (${cachedFiles.length} files)`);
+          console.log(
+            `[fetchMusicFiles] Using cached data for ${folder.name} (${cachedFiles.length} files)`,
+          );
           allFiles.push(...cachedFiles);
           continue; // キャッシュがあればAPIコールをスキップ
         }
@@ -330,7 +339,9 @@ function App() {
       setAllFetchedMusicFiles(allFiles); // 全ての音楽ファイルをstateに保存
 
       if (failedFolders.length > 0) {
-        setErrorMessage(`フォルダの取得に失敗しました: ${failedFolders.join("、")}（フォルダ設定から削除して再登録してください）`);
+        setErrorMessage(
+          `フォルダの取得に失敗しました: ${failedFolders.join("、")}（フォルダ設定から削除して再登録してください）`,
+        );
       }
     } catch (error: unknown) {
       console.error("[fetchMusicFiles] Unexpected error:", error);
@@ -448,7 +459,7 @@ function App() {
       <CssBaseline />
       {/* アプリケーションのヘッダー部分 */}
       <AppBar position="static">
-        <Toolbar sx={{ gap: 2, mt: 0, mb: 0, pt: 'env(safe-area-inset-top)' }}>
+        <Toolbar sx={{ gap: 2, mt: 0, mb: 0, pt: "env(safe-area-inset-top)" }}>
           <MusicNoteIcon sx={{ mr: 2 }} />
           <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
             GD-Player
@@ -630,15 +641,21 @@ function App() {
             <Box sx={{ mt: 3 }}>
               {musicFiles.length > 0 ? (
                 <AnimatePresence>
-                  {musicFiles.map((file) => {
+                  {musicFiles.map((file, index) => {
                     const isPlaying = selectedFile?.id === file.id;
                     return (
                       <motion.div
                         key={file.id}
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        transition={{ duration: 0.15, ease: "easeOut" }}
+                        initial={{ opacity: 0, y: 18, scale: 0.985, filter: "blur(8px)" }}
+                        animate={{ opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }}
+                        exit={{ opacity: 0, x: 24, scale: 0.98, filter: "blur(6px)" }}
+                        whileHover={{ x: 8, scale: 1.01 }}
+                        whileTap={{ scale: 0.992 }}
+                        transition={{
+                          duration: 0.28,
+                          ease: [0.16, 1, 0.3, 1],
+                          delay: Math.min(index * 0.025, 0.18),
+                        }}
                       >
                         <Box
                           onClick={() => playMusic(file)}
@@ -649,9 +666,7 @@ function App() {
                             background: isPlaying
                               ? "linear-gradient(135deg, rgba(255, 0, 110, 0.15), rgba(0, 245, 212, 0.1))"
                               : "rgba(42, 10, 77, 0.6)",
-                            border: isPlaying
-                              ? "2px solid"
-                              : "1px solid rgba(255, 0, 110, 0.2)",
+                            border: isPlaying ? "2px solid" : "1px solid rgba(255, 0, 110, 0.2)",
                             borderImage: isPlaying
                               ? "linear-gradient(90deg, #ff006e, #00f5d4) 1"
                               : "none",
@@ -659,7 +674,8 @@ function App() {
                               ? "0 0 20px rgba(255, 0, 110, 0.4), 0 0 40px rgba(0, 245, 212, 0.2)"
                               : "0 2px 8px rgba(0, 0, 0, 0.3)",
                             cursor: "pointer",
-                            transition: "all 0.3s ease",
+                            transition:
+                              "border-color 0.3s ease, box-shadow 0.3s ease, background 0.3s ease",
                             display: "flex",
                             alignItems: "center",
                             justifyContent: "space-between",
@@ -667,8 +683,8 @@ function App() {
                             position: "relative",
                             overflow: "hidden",
                             "&:hover": {
-                              transform: "translateX(8px)",
-                              boxShadow: "0 4px 20px rgba(255, 0, 110, 0.5), 0 0 30px rgba(0, 245, 212, 0.3)",
+                              boxShadow:
+                                "0 4px 20px rgba(255, 0, 110, 0.5), 0 0 30px rgba(0, 245, 212, 0.3)",
                               border: "1px solid rgba(255, 0, 110, 0.5)",
                               background: isPlaying
                                 ? "linear-gradient(135deg, rgba(255, 0, 110, 0.2), rgba(0, 245, 212, 0.15))"
@@ -701,19 +717,12 @@ function App() {
                                 background: isPlaying
                                   ? "linear-gradient(135deg, #ff006e, #ff4d9f)"
                                   : "rgba(255, 0, 110, 0.2)",
-                                boxShadow: isPlaying
-                                  ? "0 0 15px rgba(255, 0, 110, 0.6)"
-                                  : "none",
+                                boxShadow: isPlaying ? "0 0 15px rgba(255, 0, 110, 0.6)" : "none",
                                 transition: "all 0.3s ease",
                               }}
                             >
                               {isPlaying ? (
-                                <motion.div
-                                  animate={{ scale: [1, 1.2, 1] }}
-                                  transition={{ repeat: Infinity, duration: 1.5 }}
-                                >
-                                  <PlayArrowIcon sx={{ color: "#fff" }} />
-                                </motion.div>
+                                <NowPlayingFirefly loading={playingLoading} />
                               ) : (
                                 <MusicNoteIcon sx={{ color: "#ff006e" }} />
                               )}
@@ -727,7 +736,9 @@ function App() {
                                   overflow: "hidden",
                                   textOverflow: "ellipsis",
                                   whiteSpace: "nowrap",
-                                  textShadow: isPlaying ? "0 0 10px rgba(0, 245, 212, 0.5)" : "none",
+                                  textShadow: isPlaying
+                                    ? "0 0 10px rgba(0, 245, 212, 0.5)"
+                                    : "none",
                                 }}
                               >
                                 {file.name}
@@ -985,20 +996,6 @@ function App() {
                 zIndex: -1,
               }}
             />
-            <Box
-              sx={{
-                position: "absolute",
-                bottom: "10%",
-                right: "10%",
-                width: "400px",
-                height: "400px",
-                borderRadius: "50%",
-                background: "radial-gradient(circle, rgba(0, 245, 212, 0.1) 0%, transparent 70%)",
-                filter: "blur(80px)",
-                pointerEvents: "none",
-                zIndex: -1,
-              }}
-            />
           </Box>
         )}
       </Container>
@@ -1021,55 +1018,56 @@ function App() {
         autoHideDuration={4000}
         onClose={handleSnackbarClose}
         message={snackbarMessage}
-        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+        anchorOrigin={{ vertical: "top", horizontal: "center" }}
         sx={{
-          top: 'calc(64px + env(safe-area-inset-top)) !important',
+          top: "calc(64px + env(safe-area-inset-top)) !important",
           zIndex: 1300,
         }}
         slotProps={{
           content: {
             sx: {
-              minWidth: '300px',
-              background: 'linear-gradient(135deg, rgba(255, 0, 110, 0.95), rgba(255, 77, 159, 0.95))',
-              backdropFilter: 'blur(10px)',
-              border: '2px solid #ff006e',
-              borderRadius: '12px',
-              boxShadow: '0 0 30px rgba(255, 0, 110, 0.6), 0 8px 32px rgba(0, 0, 0, 0.4)',
-              color: '#fff',
+              minWidth: "300px",
+              background:
+                "linear-gradient(135deg, rgba(255, 0, 110, 0.95), rgba(255, 77, 159, 0.95))",
+              backdropFilter: "blur(10px)",
+              border: "2px solid #ff006e",
+              borderRadius: "12px",
+              boxShadow: "0 0 30px rgba(255, 0, 110, 0.6), 0 8px 32px rgba(0, 0, 0, 0.4)",
+              color: "#fff",
               fontWeight: 600,
-              fontSize: '1rem',
-              fontFamily: 'Inter, sans-serif',
-              '& .MuiSnackbarContent-message': {
+              fontSize: "1rem",
+              fontFamily: "Inter, sans-serif",
+              "& .MuiSnackbarContent-message": {
                 flex: 1,
-                textAlign: 'center',
-                textShadow: '0 2px 10px rgba(0, 0, 0, 0.3)',
+                textAlign: "center",
+                textShadow: "0 2px 10px rgba(0, 0, 0, 0.3)",
               },
-              '& .MuiSnackbarContent-action': {
+              "& .MuiSnackbarContent-action": {
                 marginRight: 0,
-                paddingLeft: '16px',
-                '& .MuiButton-root': {
-                  color: '#fbf8cc',
+                paddingLeft: "16px",
+                "& .MuiButton-root": {
+                  color: "#fbf8cc",
                   fontWeight: 700,
-                  textShadow: '0 0 10px rgba(251, 248, 204, 0.8)',
-                  '&:hover': {
-                    background: 'rgba(251, 248, 204, 0.1)',
-                    transform: 'scale(1.05)',
+                  textShadow: "0 0 10px rgba(251, 248, 204, 0.8)",
+                  "&:hover": {
+                    background: "rgba(251, 248, 204, 0.1)",
+                    transform: "scale(1.05)",
                   },
-                  '&:focus': {
-                    outline: 'none',
+                  "&:focus": {
+                    outline: "none",
                   },
-                  transition: 'all 0.3s ease',
+                  transition: "all 0.3s ease",
                 },
-                '& .MuiIconButton-root': {
-                  color: '#fff',
-                  '&:hover': {
-                    background: 'rgba(255, 255, 255, 0.1)',
-                    transform: 'rotate(90deg) scale(1.1)',
+                "& .MuiIconButton-root": {
+                  color: "#fff",
+                  "&:hover": {
+                    background: "rgba(255, 255, 255, 0.1)",
+                    transform: "rotate(90deg) scale(1.1)",
                   },
-                  '&:focus': {
-                    outline: 'none',
+                  "&:focus": {
+                    outline: "none",
                   },
-                  transition: 'all 0.3s ease',
+                  transition: "all 0.3s ease",
                 },
               },
             },
@@ -1082,7 +1080,10 @@ function App() {
                 size="small"
                 color="inherit"
                 onClick={() => {
-                  setFolderOptions((prev: Array<{ id: string; name: string }>) => [...prev, undoFolder]);
+                  setFolderOptions((prev: Array<{ id: string; name: string }>) => [
+                    ...prev,
+                    undoFolder,
+                  ]);
                   setUndoFolder(null);
                   setSnackbarOpen(false);
                 }}
@@ -1090,7 +1091,12 @@ function App() {
                 元に戻す
               </Button>
             )}
-            <IconButton size="small" aria-label="close" color="inherit" onClick={handleSnackbarClose}>
+            <IconButton
+              size="small"
+              aria-label="close"
+              color="inherit"
+              onClick={handleSnackbarClose}
+            >
               <CloseIcon fontSize="small" />
             </IconButton>
           </>

@@ -22,12 +22,13 @@ export const MusicListSkeleton: React.FC<MusicListSkeletonProps> = ({ count = 5 
       {Array.from({ length: count }).map((_, index) => (
         <motion.div
           key={index}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
+          initial={{ opacity: 0, y: 16, scale: 0.985 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          exit={{ opacity: 0, y: -8, scale: 0.985 }}
           transition={{
-            duration: 0.15,
-            ease: "easeOut",
+            duration: 0.32,
+            ease: [0.16, 1, 0.3, 1],
+            delay: Math.min(index * 0.04, 0.24),
           }}
         >
           <Box
@@ -35,7 +36,8 @@ export const MusicListSkeleton: React.FC<MusicListSkeletonProps> = ({ count = 5 
               mb: 2,
               p: 2,
               borderRadius: "12px",
-              background: "rgba(42, 10, 77, 0.6)",
+              background:
+                "linear-gradient(135deg, rgba(42, 10, 77, 0.68), rgba(12, 46, 67, 0.34))",
               border: "1px solid rgba(255, 0, 110, 0.2)",
               backdropFilter: "blur(10px)",
               display: "flex",
@@ -51,8 +53,18 @@ export const MusicListSkeleton: React.FC<MusicListSkeletonProps> = ({ count = 5 
                 width: "100%",
                 height: "100%",
                 background:
-                  "linear-gradient(90deg, transparent, rgba(255, 0, 110, 0.1), rgba(0, 245, 212, 0.1), transparent)",
-                animation: "shimmer 2s infinite",
+                  "linear-gradient(100deg, transparent 20%, rgba(255, 0, 110, 0.14), rgba(251, 248, 204, 0.1), rgba(0, 245, 212, 0.14), transparent 78%)",
+                animation: "shimmer 1.65s ease-in-out infinite",
+                animationDelay: `${index * 0.08}s`,
+              },
+              "&::after": {
+                content: '""',
+                position: "absolute",
+                inset: 0,
+                background:
+                  "radial-gradient(circle at 12% 50%, rgba(255, 246, 163, 0.08), transparent 18%), radial-gradient(circle at 86% 40%, rgba(0, 245, 212, 0.08), transparent 22%)",
+                opacity: 0.7,
+                pointerEvents: "none",
               },
               "@keyframes shimmer": {
                 "0%": { left: "-100%" },
