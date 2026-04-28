@@ -504,7 +504,6 @@ export const CustomAudioPlayer: React.FC<CustomAudioPlayerProps> = ({
             >
               {selectedFile.name}
             </Typography>
-            {(isPlaying || isLoading) && <LiveWaveform compact loading={isLoading} />}
           </Box>
         )}
 

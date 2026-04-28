@@ -720,54 +720,6 @@ function App() {
                               : {},
                           }}
                         >
-                          {isPlaying && (
-                            <Box
-                              aria-hidden
-                              sx={{
-                                position: "absolute",
-                                left: 88,
-                                right: 64,
-                                bottom: 10,
-                                height: 18,
-                                display: { xs: "none", sm: "flex" },
-                                alignItems: "end",
-                                gap: "5px",
-                                opacity: 0.38,
-                                pointerEvents: "none",
-                              }}
-                            >
-                              {Array.from({ length: 20 }).map((_, barIndex) => (
-                                <Box
-                                  key={barIndex}
-                                  component={motion.div}
-                                  animate={{
-                                    height: [
-                                      4,
-                                      8 + ((barIndex * 7) % 10),
-                                      5 + ((barIndex * 5) % 8),
-                                    ],
-                                    opacity: [0.32, 0.9, 0.42],
-                                  }}
-                                  transition={{
-                                    duration: playingLoading ? 0.5 : 0.86 + (barIndex % 4) * 0.08,
-                                    repeat: Infinity,
-                                    ease: "easeInOut",
-                                    delay: barIndex * 0.035,
-                                  }}
-                                  sx={{
-                                    flex: 1,
-                                    maxWidth: 12,
-                                    borderRadius: "999px",
-                                    background:
-                                      barIndex % 2 === 0
-                                        ? "linear-gradient(180deg, #fbf8cc, #00f5d4)"
-                                        : "linear-gradient(180deg, #fbf8cc, #ff006e)",
-                                    boxShadow: "0 0 10px rgba(251, 248, 204, 0.32)",
-                                  }}
-                                />
-                              ))}
-                            </Box>
-                          )}
                           <Box sx={{ display: "flex", alignItems: "center", flex: 1, minWidth: 0 }}>
                             <Box
                               sx={{
