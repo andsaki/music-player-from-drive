@@ -54,13 +54,18 @@ const isAuthorizationError = (error: unknown) => {
 const getMemoStorageKey = (folderId: string) => `${LOCAL_STORAGE_KEYS.USER_MEMO_PREFIX}${folderId}`;
 
 const memoSnackbarSx = {
-  top: "calc(64px + env(safe-area-inset-top)) !important",
+  top: {
+    xs: "calc(88px + env(safe-area-inset-top)) !important",
+    sm: "calc(24px + env(safe-area-inset-top)) !important",
+  },
+  right: { xs: "12px !important", sm: "24px !important" },
+  left: { xs: "12px !important", sm: "auto !important" },
   zIndex: 1400,
 };
 
 const getMemoToastSx = (mode: "success" | "error") => ({
   width: "100%",
-  minWidth: { xs: "min(92vw, 320px)", sm: "360px" },
+  minWidth: { xs: "auto", sm: "360px" },
   alignItems: "center",
   borderRadius: "14px",
   border: mode === "success" ? "2px solid #00f5d4" : "2px solid #ff006e",
@@ -508,7 +513,7 @@ const MemoModal: React.FC<MemoModalProps> = ({
         open={feedbackMessage !== null}
         autoHideDuration={4000}
         onClose={handleFeedbackClose}
-        anchorOrigin={{ vertical: "top", horizontal: "center" }}
+        anchorOrigin={{ vertical: "top", horizontal: "right" }}
         sx={memoSnackbarSx}
       >
         <Alert onClose={handleFeedbackClose} severity="success" variant="filled" sx={getMemoToastSx("success")}>
@@ -519,7 +524,7 @@ const MemoModal: React.FC<MemoModalProps> = ({
         open={errorMessage !== null}
         autoHideDuration={5000}
         onClose={handleErrorClose}
-        anchorOrigin={{ vertical: "top", horizontal: "center" }}
+        anchorOrigin={{ vertical: "top", horizontal: "right" }}
         sx={memoSnackbarSx}
       >
         <Alert onClose={handleErrorClose} severity="error" variant="filled" sx={getMemoToastSx("error")}>
