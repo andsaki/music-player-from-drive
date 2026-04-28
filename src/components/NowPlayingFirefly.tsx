@@ -25,6 +25,8 @@ const orbitalFireflies = [
   { size: 10, orbit: 122, duration: 8.4, delay: 2.2 },
 ];
 
+const grooveRings = [58, 86, 116, 146, 176, 206];
+
 export const NowPlayingFirefly: React.FC<NowPlayingFireflyProps> = ({
   loading = false,
   variant = "compact",
@@ -82,6 +84,29 @@ export const NowPlayingFirefly: React.FC<NowPlayingFireflyProps> = ({
           : undefined,
       }}
     >
+      {isHero &&
+        grooveRings.map((size, index) => (
+          <Box
+            key={size}
+            component={motion.div}
+            animate={{ opacity: [0.08, 0.22, 0.08], scale: [0.98, 1.01, 0.98] }}
+            transition={{
+              duration: 2.4 + index * 0.18,
+              repeat: Infinity,
+              ease: "easeInOut",
+              delay: index * 0.12,
+            }}
+            sx={{
+              position: "absolute",
+              width: size,
+              height: size,
+              borderRadius: "50%",
+              border: "1px solid rgba(251, 248, 204, 0.28)",
+              boxShadow: "inset 0 0 10px rgba(0, 245, 212, 0.08)",
+              zIndex: 1,
+            }}
+          />
+        ))}
       {isHero &&
         orbitalFireflies.map((firefly, index) => (
           <Box

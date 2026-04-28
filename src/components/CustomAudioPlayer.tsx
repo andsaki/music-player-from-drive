@@ -28,6 +28,60 @@ const clampDragOffset = (value: number, expanded: boolean) =>
     ? Math.min(DRAG_VISUAL_LIMIT, Math.max(0, value))
     : Math.max(-DRAG_VISUAL_LIMIT, Math.min(0, value));
 const getNow = () => (typeof performance !== "undefined" ? performance.now() : Date.now());
+const waveformBars = [16, 28, 18, 34, 22, 40, 26, 18, 32, 20, 36, 24, 30, 18, 28, 22];
+
+const LiveWaveform: React.FC<{ compact?: boolean; loading?: boolean }> = ({
+  compact = false,
+  loading = false,
+}) => (
+  <Box
+    aria-hidden
+    sx={{
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: compact ? "3px" : "5px",
+      height: compact ? 18 : 36,
+      width: compact ? { xs: 46, sm: 78 } : { xs: 180, sm: 260 },
+      mt: compact ? 0 : 1.5,
+      px: compact ? 0 : 2,
+      opacity: loading ? 0.95 : 0.78,
+      overflow: "hidden",
+    }}
+  >
+    {waveformBars.map((height, index) => (
+      <Box
+        key={index}
+        component={motion.div}
+        animate={{
+          height: [
+            Math.max(4, height * (compact ? 0.22 : 0.38)),
+            height * (compact ? 0.42 : 0.82),
+            Math.max(5, height * (compact ? 0.3 : 0.5)),
+          ],
+          opacity: [0.35, 1, 0.5],
+        }}
+        transition={{
+          duration: loading ? 0.48 : 0.9 + (index % 4) * 0.08,
+          repeat: Infinity,
+          ease: "easeInOut",
+          delay: index * 0.045,
+        }}
+        sx={{
+          width: compact ? 2 : 4,
+          borderRadius: "999px",
+          background:
+            index % 3 === 0
+              ? "linear-gradient(180deg, #fbf8cc, #ff006e)"
+              : "linear-gradient(180deg, #fbf8cc, #00f5d4)",
+          boxShadow: compact
+            ? "0 0 6px rgba(251, 248, 204, 0.36)"
+            : "0 0 12px rgba(251, 248, 204, 0.42), 0 0 18px rgba(0, 245, 212, 0.18)",
+        }}
+      />
+    ))}
+  </Box>
+);
 
 interface CustomAudioPlayerProps {
   audioRef: React.RefObject<HTMLAudioElement | null>;
@@ -401,6 +455,7 @@ export const CustomAudioPlayer: React.FC<CustomAudioPlayerProps> = ({
             >
               {selectedFile.name}
             </Typography>
+            {(isPlaying || isLoading) && <LiveWaveform loading={isLoading} />}
           </Box>
         )}
 
@@ -449,6 +504,7 @@ export const CustomAudioPlayer: React.FC<CustomAudioPlayerProps> = ({
             >
               {selectedFile.name}
             </Typography>
+            {(isPlaying || isLoading) && <LiveWaveform compact loading={isLoading} />}
           </Box>
         )}
 
@@ -480,7 +536,9 @@ export const CustomAudioPlayer: React.FC<CustomAudioPlayerProps> = ({
               },
               "@keyframes seekThumbPulse": {
                 "0%, 100%": { boxShadow: "0 0 12px rgba(255, 0, 110, 0.72)" },
-                "50%": { boxShadow: "0 0 22px rgba(255, 0, 110, 0.95), 0 0 28px rgba(0, 245, 212, 0.36)" },
+                "50%": {
+                  boxShadow: "0 0 22px rgba(255, 0, 110, 0.95), 0 0 28px rgba(0, 245, 212, 0.36)",
+                },
               },
             }}
           />
@@ -561,12 +619,10 @@ export const CustomAudioPlayer: React.FC<CustomAudioPlayerProps> = ({
                 },
                 "@keyframes playButtonBreath": {
                   "0%, 100%": {
-                    boxShadow:
-                      "0 0 22px rgba(255, 0, 110, 0.58), 0 0 34px rgba(0, 245, 212, 0.18)",
+                    boxShadow: "0 0 22px rgba(255, 0, 110, 0.58), 0 0 34px rgba(0, 245, 212, 0.18)",
                   },
                   "50%": {
-                    boxShadow:
-                      "0 0 34px rgba(255, 0, 110, 0.86), 0 0 54px rgba(0, 245, 212, 0.34)",
+                    boxShadow: "0 0 34px rgba(255, 0, 110, 0.86), 0 0 54px rgba(0, 245, 212, 0.34)",
                   },
                 },
                 transition: "all 0.3s ease",
