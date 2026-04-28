@@ -702,22 +702,6 @@ function App() {
                                   boxShadow: "0 0 10px rgba(255, 0, 110, 0.8)",
                                 }
                               : {},
-                            "&::after": isPlaying
-                              ? {
-                                  content: '""',
-                                  position: "absolute",
-                                  inset: "-40% -20%",
-                                  background:
-                                    "linear-gradient(110deg, transparent 30%, rgba(255, 246, 163, 0.14) 48%, rgba(0, 245, 212, 0.18) 52%, transparent 70%)",
-                                  transform: "translateX(-65%)",
-                                  animation: "activeTrackSweep 3.2s ease-in-out infinite",
-                                  pointerEvents: "none",
-                                  "@keyframes activeTrackSweep": {
-                                    "0%, 42%": { transform: "translateX(-65%)" },
-                                    "72%, 100%": { transform: "translateX(65%)" },
-                                  },
-                                }
-                              : {},
                           }}
                         >
                           <Box sx={{ display: "flex", alignItems: "center", flex: 1, minWidth: 0 }}>
@@ -1008,20 +992,6 @@ function App() {
                 borderRadius: "50%",
                 background: "radial-gradient(circle, rgba(255, 0, 110, 0.1) 0%, transparent 70%)",
                 filter: "blur(60px)",
-                pointerEvents: "none",
-                zIndex: -1,
-              }}
-            />
-            <Box
-              sx={{
-                position: "absolute",
-                bottom: "10%",
-                right: "10%",
-                width: "400px",
-                height: "400px",
-                borderRadius: "50%",
-                background: "radial-gradient(circle, rgba(0, 245, 212, 0.1) 0%, transparent 70%)",
-                filter: "blur(80px)",
                 pointerEvents: "none",
                 zIndex: -1,
               }}

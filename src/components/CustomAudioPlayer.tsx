@@ -340,22 +340,6 @@ export const CustomAudioPlayer: React.FC<CustomAudioPlayerProps> = ({
           display: "flex",
           flexDirection: "column",
           touchAction: isExpanded ? "auto" : "none",
-          isolation: "isolate",
-          "&::before": {
-            content: '""',
-            position: "absolute",
-            inset: 0,
-            background:
-              "radial-gradient(circle at 18% 0%, rgba(0, 245, 212, 0.14), transparent 32%), radial-gradient(circle at 82% 18%, rgba(255, 0, 110, 0.16), transparent 34%), linear-gradient(100deg, transparent 0%, rgba(251, 248, 204, 0.06) 48%, transparent 56%)",
-            opacity: isPlaying || isLoading ? 1 : 0.56,
-            animation: "playerAmbientDrift 7s ease-in-out infinite",
-            pointerEvents: "none",
-            zIndex: 0,
-            "@keyframes playerAmbientDrift": {
-              "0%, 100%": { transform: "translate3d(-2%, 0, 0) scale(1)" },
-              "50%": { transform: "translate3d(2%, -1%, 0) scale(1.04)" },
-            },
-          },
         }}
       >
         {/* ドラッグハンドル */}
