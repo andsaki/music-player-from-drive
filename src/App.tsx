@@ -630,15 +630,17 @@ function App() {
             <Box sx={{ mt: 3 }}>
               {musicFiles.length > 0 ? (
                 <AnimatePresence>
-                  {musicFiles.map((file) => {
+                  {musicFiles.map((file, index) => {
                     const isPlaying = selectedFile?.id === file.id;
                     return (
                       <motion.div
                         key={file.id}
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        transition={{ duration: 0.15, ease: "easeOut" }}
+                        initial={{ opacity: 0, y: 18, scale: 0.985, filter: "blur(8px)" }}
+                        animate={{ opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }}
+                        exit={{ opacity: 0, x: 24, scale: 0.98, filter: "blur(6px)" }}
+                        whileHover={{ x: 8, scale: 1.01 }}
+                        whileTap={{ scale: 0.992 }}
+                        transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1], delay: Math.min(index * 0.025, 0.18) }}
                       >
                         <Box
                           onClick={() => playMusic(file)}
@@ -659,7 +661,7 @@ function App() {
                               ? "0 0 20px rgba(255, 0, 110, 0.4), 0 0 40px rgba(0, 245, 212, 0.2)"
                               : "0 2px 8px rgba(0, 0, 0, 0.3)",
                             cursor: "pointer",
-                            transition: "all 0.3s ease",
+                            transition: "border-color 0.3s ease, box-shadow 0.3s ease, background 0.3s ease",
                             display: "flex",
                             alignItems: "center",
                             justifyContent: "space-between",
@@ -667,7 +669,6 @@ function App() {
                             position: "relative",
                             overflow: "hidden",
                             "&:hover": {
-                              transform: "translateX(8px)",
                               boxShadow: "0 4px 20px rgba(255, 0, 110, 0.5), 0 0 30px rgba(0, 245, 212, 0.3)",
                               border: "1px solid rgba(255, 0, 110, 0.5)",
                               background: isPlaying
@@ -684,6 +685,22 @@ function App() {
                                   width: "4px",
                                   background: "linear-gradient(180deg, #ff006e, #00f5d4)",
                                   boxShadow: "0 0 10px rgba(255, 0, 110, 0.8)",
+                                }
+                              : {},
+                            "&::after": isPlaying
+                              ? {
+                                  content: '""',
+                                  position: "absolute",
+                                  inset: "-40% -20%",
+                                  background:
+                                    "linear-gradient(110deg, transparent 30%, rgba(255, 246, 163, 0.14) 48%, rgba(0, 245, 212, 0.18) 52%, transparent 70%)",
+                                  transform: "translateX(-65%)",
+                                  animation: "activeTrackSweep 3.2s ease-in-out infinite",
+                                  pointerEvents: "none",
+                                  "@keyframes activeTrackSweep": {
+                                    "0%, 42%": { transform: "translateX(-65%)" },
+                                    "72%, 100%": { transform: "translateX(65%)" },
+                                  },
                                 }
                               : {},
                           }}

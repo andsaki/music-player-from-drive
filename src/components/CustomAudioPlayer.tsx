@@ -286,6 +286,22 @@ export const CustomAudioPlayer: React.FC<CustomAudioPlayerProps> = ({
           display: "flex",
           flexDirection: "column",
           touchAction: isExpanded ? "auto" : "none",
+          isolation: "isolate",
+          "&::before": {
+            content: '""',
+            position: "absolute",
+            inset: 0,
+            background:
+              "radial-gradient(circle at 18% 0%, rgba(0, 245, 212, 0.14), transparent 32%), radial-gradient(circle at 82% 18%, rgba(255, 0, 110, 0.16), transparent 34%), linear-gradient(100deg, transparent 0%, rgba(251, 248, 204, 0.06) 48%, transparent 56%)",
+            opacity: isPlaying || isLoading ? 1 : 0.56,
+            animation: "playerAmbientDrift 7s ease-in-out infinite",
+            pointerEvents: "none",
+            zIndex: 0,
+            "@keyframes playerAmbientDrift": {
+              "0%, 100%": { transform: "translate3d(-2%, 0, 0) scale(1)" },
+              "50%": { transform: "translate3d(2%, -1%, 0) scale(1.04)" },
+            },
+          },
         }}
       >
         {/* ドラッグハンドル */}
@@ -449,6 +465,7 @@ export const CustomAudioPlayer: React.FC<CustomAudioPlayerProps> = ({
                 width: 16,
                 height: 16,
                 boxShadow: "0 0 15px rgba(255, 0, 110, 0.8)",
+                animation: isPlaying ? "seekThumbPulse 1.6s ease-in-out infinite" : "none",
                 transition: "all 0.2s",
                 "&:hover": {
                   boxShadow: "0 0 20px rgba(255, 0, 110, 1)",
@@ -460,6 +477,10 @@ export const CustomAudioPlayer: React.FC<CustomAudioPlayerProps> = ({
               },
               "& .MuiSlider-rail": {
                 opacity: 0.3,
+              },
+              "@keyframes seekThumbPulse": {
+                "0%, 100%": { boxShadow: "0 0 12px rgba(255, 0, 110, 0.72)" },
+                "50%": { boxShadow: "0 0 22px rgba(255, 0, 110, 0.95), 0 0 28px rgba(0, 245, 212, 0.36)" },
               },
             }}
           />
@@ -532,10 +553,21 @@ export const CustomAudioPlayer: React.FC<CustomAudioPlayerProps> = ({
                 background: "linear-gradient(135deg, #ff006e, #ff4d9f)",
                 boxShadow: "0 0 25px rgba(255, 0, 110, 0.6)",
                 color: "#fff",
+                animation: isPlaying ? "playButtonBreath 1.35s ease-in-out infinite" : "none",
                 "&:hover": {
                   background: "linear-gradient(135deg, #ff4d9f, #ff006e)",
                   boxShadow: "0 0 35px rgba(255, 0, 110, 0.9)",
                   transform: "scale(1.1)",
+                },
+                "@keyframes playButtonBreath": {
+                  "0%, 100%": {
+                    boxShadow:
+                      "0 0 22px rgba(255, 0, 110, 0.58), 0 0 34px rgba(0, 245, 212, 0.18)",
+                  },
+                  "50%": {
+                    boxShadow:
+                      "0 0 34px rgba(255, 0, 110, 0.86), 0 0 54px rgba(0, 245, 212, 0.34)",
+                  },
                 },
                 transition: "all 0.3s ease",
               }}
