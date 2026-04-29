@@ -347,7 +347,9 @@ function App() {
             },
           );
           const fetchedFiles = response.files || [];
-          logger.debug(`[fetchMusicFiles] Fetched ${fetchedFiles.length} files from ${folder.name}`);
+          logger.debug(
+            `[fetchMusicFiles] Fetched ${fetchedFiles.length} files from ${folder.name}`,
+          );
 
           // 取得したデータをキャッシュに保存（10分間有効）
           cacheMusicFiles(folder.id, fetchedFiles);
@@ -1056,57 +1058,59 @@ function App() {
         sx={{
           bottom: selectedFile
             ? {
-                xs: "calc(208px + env(safe-area-inset-bottom)) !important",
-                sm: "calc(176px + env(safe-area-inset-bottom)) !important",
+                xs: "calc(144px + env(safe-area-inset-bottom)) !important",
+                sm: "calc(128px + env(safe-area-inset-bottom)) !important",
               }
-            : "calc(24px + env(safe-area-inset-bottom)) !important",
+            : "calc(18px + env(safe-area-inset-bottom)) !important",
+          left: { sm: "24px !important" },
+          right: { sm: "auto !important" },
           zIndex: 1300,
         }}
         slotProps={{
           content: {
             sx: {
-              minWidth: "300px",
-              background:
-                "linear-gradient(135deg, rgba(255, 0, 110, 0.95), rgba(255, 77, 159, 0.95))",
-              backdropFilter: "blur(10px)",
-              border: "2px solid #ff006e",
-              borderRadius: "12px",
-              boxShadow: "0 0 30px rgba(255, 0, 110, 0.6), 0 8px 32px rgba(0, 0, 0, 0.4)",
+              minWidth: { xs: "min(92vw, 320px)", sm: "360px" },
+              maxWidth: { xs: "92vw", sm: "440px" },
+              background: "linear-gradient(135deg, rgba(22, 12, 38, 0.96), rgba(12, 38, 45, 0.94))",
+              backdropFilter: "blur(14px)",
+              border: "1px solid rgba(251, 248, 204, 0.24)",
+              borderRadius: "999px",
+              boxShadow: "0 10px 30px rgba(0, 0, 0, 0.36), 0 0 22px rgba(0, 245, 212, 0.18)",
               color: "#fff",
               fontWeight: 600,
-              fontSize: "1rem",
-              fontFamily: "Inter, sans-serif",
+              fontSize: "0.92rem",
+              px: 2,
+              py: 0.75,
               "& .MuiSnackbarContent-message": {
                 flex: 1,
-                textAlign: "center",
-                textShadow: "0 2px 10px rgba(0, 0, 0, 0.3)",
+                textAlign: "left",
+                textShadow: "none",
               },
               "& .MuiSnackbarContent-action": {
                 marginRight: 0,
-                paddingLeft: "16px",
+                paddingLeft: "12px",
                 "& .MuiButton-root": {
                   color: "#fbf8cc",
                   fontWeight: 700,
-                  textShadow: "0 0 10px rgba(251, 248, 204, 0.8)",
+                  borderRadius: "999px",
+                  textShadow: "none",
                   "&:hover": {
-                    background: "rgba(251, 248, 204, 0.1)",
-                    transform: "scale(1.05)",
+                    background: "rgba(251, 248, 204, 0.12)",
                   },
                   "&:focus": {
                     outline: "none",
                   },
-                  transition: "all 0.3s ease",
+                  transition: "background 0.2s ease",
                 },
                 "& .MuiIconButton-root": {
                   color: "#fff",
                   "&:hover": {
                     background: "rgba(255, 255, 255, 0.1)",
-                    transform: "rotate(90deg) scale(1.1)",
                   },
                   "&:focus": {
                     outline: "none",
                   },
-                  transition: "all 0.3s ease",
+                  transition: "background 0.2s ease",
                 },
               },
             },

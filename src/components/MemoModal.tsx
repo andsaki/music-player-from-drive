@@ -51,36 +51,42 @@ const getMemoStorageKey = (folderId: string) => `${LOCAL_STORAGE_KEYS.USER_MEMO_
 
 const memoSnackbarSx = {
   top: {
-    xs: "calc(88px + env(safe-area-inset-top)) !important",
-    sm: "calc(24px + env(safe-area-inset-top)) !important",
+    xs: "calc(76px + env(safe-area-inset-top)) !important",
+    sm: "calc(28px + env(safe-area-inset-top)) !important",
   },
-  right: { xs: "12px !important", sm: "24px !important" },
-  left: { xs: "12px !important", sm: "auto !important" },
+  right: {
+    xs: "14px !important",
+    sm: "calc((100vw - min(600px, 100vw - 64px)) / 2 + 20px) !important",
+  },
+  left: { xs: "14px !important", sm: "auto !important" },
   zIndex: 1400,
 };
 
 const getMemoToastSx = (mode: "success" | "error") => ({
   width: "100%",
-  minWidth: { xs: "auto", sm: "360px" },
+  minWidth: { xs: "auto", sm: "320px" },
+  maxWidth: { xs: "none", sm: "420px" },
   alignItems: "center",
-  borderRadius: "14px",
-  border: mode === "success" ? "2px solid #00f5d4" : "2px solid #ff006e",
+  borderRadius: "999px",
+  border:
+    mode === "success" ? "1px solid rgba(0, 245, 212, 0.46)" : "1px solid rgba(255, 0, 110, 0.5)",
   background:
     mode === "success"
-      ? "linear-gradient(135deg, rgba(0, 245, 212, 0.92), rgba(0, 180, 216, 0.92))"
-      : "linear-gradient(135deg, rgba(255, 0, 110, 0.95), rgba(255, 77, 159, 0.95))",
-  backdropFilter: "blur(12px)",
+      ? "linear-gradient(135deg, rgba(10, 52, 54, 0.96), rgba(0, 96, 110, 0.94))"
+      : "linear-gradient(135deg, rgba(74, 14, 42, 0.96), rgba(118, 22, 68, 0.94))",
+  backdropFilter: "blur(14px)",
   boxShadow:
     mode === "success"
-      ? "0 0 30px rgba(0, 245, 212, 0.45), 0 8px 32px rgba(0, 0, 0, 0.35)"
-      : "0 0 30px rgba(255, 0, 110, 0.55), 0 8px 32px rgba(0, 0, 0, 0.4)",
+      ? "0 10px 28px rgba(0, 0, 0, 0.32), 0 0 18px rgba(0, 245, 212, 0.2)"
+      : "0 10px 28px rgba(0, 0, 0, 0.36), 0 0 18px rgba(255, 0, 110, 0.22)",
   color: "#fff",
-  fontWeight: 700,
+  fontWeight: 600,
+  fontSize: "0.9rem",
   letterSpacing: "0.01em",
-  textShadow: "0 2px 10px rgba(0, 0, 0, 0.28)",
+  textShadow: "none",
   "& .MuiAlert-message": {
     width: "100%",
-    py: 0.25,
+    py: 0.1,
   },
   "& .MuiAlert-icon": {
     color: "#fbf8cc",
