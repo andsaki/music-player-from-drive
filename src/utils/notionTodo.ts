@@ -26,9 +26,8 @@ const parseResponse = async (response: Response) => {
 
 export const isNotionSyncConfigured = () => notionSyncPageId !== "";
 
-export const buildNotionSyncSectionTitle = (folderName: string) => {
-  const normalizedFolderName = folderName.trim().replace(/\s+/g, " ");
-  return `${getSectionPrefix()}: ${normalizedFolderName || "Untitled Folder"}`;
+export const buildNotionSyncSectionTitle = (_folderName: string) => {
+  return getSectionPrefix();
 };
 
 export const loadTasksFromNotion = async (folderName: string) => {
@@ -38,6 +37,7 @@ export const loadTasksFromNotion = async (folderName: string) => {
 
   const params = new URLSearchParams({
     pageId: notionSyncPageId,
+    folderName,
     sectionTitle: buildNotionSyncSectionTitle(folderName),
   });
 
@@ -62,6 +62,7 @@ export const saveTasksToNotion = async (folderName: string, tasks: Task[]) => {
     },
     body: JSON.stringify({
       pageId: notionSyncPageId,
+      folderName,
       sectionTitle: buildNotionSyncSectionTitle(folderName),
       tasks: tasks.map((task) => ({
         text: task.text,

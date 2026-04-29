@@ -428,8 +428,8 @@ const MemoModal: React.FC<MemoModalProps> = ({
       applyTasksUpdate(result.tasks, { publish: true });
       setFeedbackMessage(
         result.found
-          ? "Notion の App TODO Sync から読み込みました。"
-          : "Notion 側に App TODO Sync がまだ無いため、空の TODO を表示しています。",
+          ? "Notion の曲ページ内 App TODO から読み込みました。"
+          : "Notion 側に App TODO がまだ無いため、空の TODO を表示しています。",
       );
     } catch (error) {
       console.error("Failed to load TODO from Notion", error);
@@ -453,7 +453,7 @@ const MemoModal: React.FC<MemoModalProps> = ({
     try {
       await saveTasksToNotion(folderName, tasks);
       cacheTasksLocally(tasks);
-      setFeedbackMessage("Notion の App TODO Sync に保存しました。");
+      setFeedbackMessage("Notion の曲ページ内 App TODO に保存しました。");
     } catch (error) {
       console.error("Failed to save TODO to Notion", error);
       setErrorMessage(error instanceof Error ? error.message : "Notion への保存に失敗しました。");
@@ -491,6 +491,12 @@ const MemoModal: React.FC<MemoModalProps> = ({
             {folderId === "all" && (
               <Alert severity="warning">
                 TODO を使うには「All Folders」以外の曲フォルダを選択してください。
+              </Alert>
+            )}
+            {!notionSyncEnabled && (
+              <Alert severity="info">
+                Notion 同期は未設定です。.env に VITE_NOTION_SYNC_PAGE_ID と NOTION_API_KEY
+                を設定し、対象ページを Notion integration に共有してください。
               </Alert>
             )}
             <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>

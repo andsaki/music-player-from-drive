@@ -2,7 +2,7 @@ export const ALL_FOLDERS_OPTION = { id: "all", name: "All Folders" };
 export const GOOGLE_DRIVE_SCOPE = "https://www.googleapis.com/auth/drive";
 export const GOOGLE_TOKEN_SCOPE_VERSION = "drive-write-v1";
 export const TODO_FILE_NAME = "TODO.md";
-export const NOTION_SYNC_SECTION_PREFIX = "App TODO Sync";
+export const NOTION_SYNC_SECTION_PREFIX = "App TODO";
 export const LOCAL_STORAGE_KEYS = {
   FOLDER_OPTIONS: "folderOptions",
   GOOGLE_ACCESS_TOKEN: "googleAccessToken",
