@@ -10,6 +10,10 @@ interface NotionRichTextItem {
   plain_text?: string;
 }
 
+interface NotionTitleItem {
+  plain_text?: string;
+}
+
 interface NotionTodoTask {
   text: string;
   completed: boolean;
@@ -18,6 +22,18 @@ interface NotionTodoTask {
 interface NotionBlock {
   id: string;
   type: string;
+  child_page?: {
+    title?: string;
+  };
+  heading_1?: {
+    rich_text?: NotionRichTextItem[];
+  };
+  heading_2?: {
+    rich_text?: NotionRichTextItem[];
+  };
+  heading_3?: {
+    rich_text?: NotionRichTextItem[];
+  };
   toggle?: {
     rich_text?: NotionRichTextItem[];
   };
@@ -31,6 +47,17 @@ interface NotionListResponse {
   results?: NotionBlock[];
   has_more?: boolean;
   next_cursor?: string;
+}
+
+interface NotionPageResponse {
+  id: string;
+  properties?: Record<
+    string,
+    {
+      type?: string;
+      title?: NotionTitleItem[];
+    }
+  >;
 }
 
 interface NotionSuccessBody {
@@ -50,6 +77,7 @@ interface CreateNotionTodoResponseParams {
   body?: {
     pageId?: string;
     sectionTitle?: string;
+    folderName?: string;
     tasks?: Array<Partial<NotionTodoTask>>;
   };
   env?: Record<string, string | undefined>;
@@ -58,7 +86,10 @@ interface CreateNotionTodoResponseParams {
 const jsonResponse = <T>(status: number, body: T): JsonResponse<T> => ({ status, body });
 
 const getPlainText = (richText: NotionRichTextItem[] = []) => {
-  return richText.map((item) => item.plain_text ?? "").join("").trim();
+  return richText
+    .map((item) => item.plain_text ?? "")
+    .join("")
+    .trim();
 };
 
 const createRichText = (content: string) => [{ type: "text", text: { content } }];
@@ -73,8 +104,51 @@ const createTodoBlock = (task: NotionTodoTask) => ({
   },
 });
 
-const isSectionBlock = (block: NotionBlock, sectionTitle: string) => {
-  return block.type === "toggle" && getPlainText(block.toggle?.rich_text) === sectionTitle;
+const createHeadingBlock = (content: string) => ({
+  object: "block",
+  type: "heading_1",
+  heading_1: {
+    rich_text: createRichText(content),
+    color: "default",
+  },
+});
+
+const createToggleBlock = (title: string, tasks: NotionTodoTask[]) => ({
+  object: "block",
+  type: "toggle",
+  toggle: {
+    rich_text: createRichText(title),
+    color: "default",
+    children: tasks.map(createTodoBlock),
+  },
+});
+
+const normalizeTitle = (title: string) => title.trim().replace(/\s+/g, " ").toLowerCase();
+
+const getHeadingText = (block: NotionBlock) => {
+  if (block.type === "heading_1") return getPlainText(block.heading_1?.rich_text);
+  if (block.type === "heading_2") return getPlainText(block.heading_2?.rich_text);
+  if (block.type === "heading_3") return getPlainText(block.heading_3?.rich_text);
+  return "";
+};
+
+const getHeadingLevel = (block: NotionBlock) => {
+  if (block.type === "heading_1") return 1;
+  if (block.type === "heading_2") return 2;
+  if (block.type === "heading_3") return 3;
+  return null;
+};
+
+const isTodoHeading = (block: NotionBlock) => {
+  const headingText = normalizeTitle(getHeadingText(block));
+  return headingText === "todo" || headingText === "todos";
+};
+
+const isAppTodoToggle = (block: NotionBlock, title: string) => {
+  return (
+    block.type === "toggle" &&
+    normalizeTitle(getPlainText(block.toggle?.rich_text)) === normalizeTitle(title)
+  );
 };
 
 const notionRequest = async <T>(
@@ -114,7 +188,10 @@ const listBlockChildren = async (blockId: string, token: string) => {
       params.set("start_cursor", nextCursor);
     }
 
-    const response = await notionRequest<NotionListResponse>(`/blocks/${blockId}/children?${params.toString()}`, token);
+    const response = await notionRequest<NotionListResponse>(
+      `/blocks/${blockId}/children?${params.toString()}`,
+      token,
+    );
     results.push(...(response?.results ?? []));
     nextCursor = response?.has_more ? response.next_cursor : undefined;
   } while (nextCursor);
@@ -124,11 +201,18 @@ const listBlockChildren = async (blockId: string, token: string) => {
 
 const archiveBlocks = async (blocks: NotionBlock[], token: string) => {
   await Promise.all(
-    blocks.map((block) => notionRequest(`/blocks/${block.id}`, token, { method: "PATCH", body: { archived: true } })),
+    blocks.map((block) =>
+      notionRequest(`/blocks/${block.id}`, token, { method: "PATCH", body: { archived: true } }),
+    ),
   );
 };
 
-const appendChildren = async (blockId: string, children: unknown[], token: string) => {
+const appendChildren = async (
+  blockId: string,
+  children: unknown[],
+  token: string,
+  after?: string,
+) => {
   if (children.length === 0) {
     return;
   }
@@ -136,14 +220,19 @@ const appendChildren = async (blockId: string, children: unknown[], token: strin
   for (let index = 0; index < children.length; index += 100) {
     await notionRequest(`/blocks/${blockId}/children`, token, {
       method: "PATCH",
-      body: { children: children.slice(index, index + 100) },
+      body: {
+        children: children.slice(index, index + 100),
+        ...(index === 0 && after ? { after } : {}),
+      },
     });
   }
 };
 
 const normalizeTasks = (tasks: Array<Partial<NotionTodoTask>>) => {
   return tasks
-    .filter((task): task is Partial<NotionTodoTask> & { text: string } => typeof task?.text === "string")
+    .filter(
+      (task): task is Partial<NotionTodoTask> & { text: string } => typeof task?.text === "string",
+    )
     .map((task) => ({
       text: task.text.trim(),
       completed: Boolean(task.completed),
@@ -151,9 +240,92 @@ const normalizeTasks = (tasks: Array<Partial<NotionTodoTask>>) => {
     .filter((task) => task.text !== "");
 };
 
-const loadSectionTasks = async (pageId: string, sectionTitle: string, token: string) => {
+const getPageTitle = async (pageId: string, token: string) => {
+  const page = await notionRequest<NotionPageResponse>(`/pages/${pageId}`, token);
+  const titleProperty = Object.values(page?.properties ?? {}).find(
+    (property) => property.type === "title",
+  );
+  return getPlainText(titleProperty?.title);
+};
+
+const resolveSongPageId = async (parentPageId: string, folderName: string, token: string) => {
+  const normalizedFolderName = normalizeTitle(folderName);
+
+  if (!normalizedFolderName) {
+    throw new Error("folderName is required");
+  }
+
+  const parentTitle = await getPageTitle(parentPageId, token);
+  if (normalizeTitle(parentTitle) === normalizedFolderName) {
+    return parentPageId;
+  }
+
+  const parentChildren = await listBlockChildren(parentPageId, token);
+  const songPage = parentChildren.find((block) => {
+    return (
+      block.type === "child_page" &&
+      normalizeTitle(block.child_page?.title ?? "") === normalizedFolderName
+    );
+  });
+
+  if (!songPage) {
+    throw new Error(`Notion song page was not found under the configured parent: ${folderName}`);
+  }
+
+  return songPage.id;
+};
+
+const findTodoSection = (pageChildren: NotionBlock[]) => {
+  const headingIndex = pageChildren.findIndex(isTodoHeading);
+  if (headingIndex === -1) {
+    return { heading: null, blocks: [] as NotionBlock[] };
+  }
+
+  const heading = pageChildren[headingIndex];
+  const headingLevel = getHeadingLevel(heading);
+  const blocks: NotionBlock[] = [];
+
+  for (const block of pageChildren.slice(headingIndex + 1)) {
+    const nextHeadingLevel = getHeadingLevel(block);
+    if (headingLevel !== null && nextHeadingLevel !== null && nextHeadingLevel <= headingLevel) {
+      break;
+    }
+    blocks.push(block);
+  }
+
+  return { heading, blocks };
+};
+
+const loadSectionTasks = async (
+  pageId: string,
+  folderName: string,
+  appTodoTitle: string,
+  token: string,
+) => {
+  const songPageId = await resolveSongPageId(pageId, folderName, token);
+  const pageChildren = await listBlockChildren(songPageId, token);
+  const todoSection = findTodoSection(pageChildren);
+  const sectionBlock = todoSection.blocks.find((block) => isAppTodoToggle(block, appTodoTitle));
+
+  if (!sectionBlock) {
+    return { found: false, tasks: [] as NotionTodoTask[] };
+  }
+
+  const sectionChildren = await listBlockChildren(sectionBlock.id, token);
+  const tasks = sectionChildren
+    .filter((block) => block.type === "to_do")
+    .map((block) => ({
+      text: getPlainText(block.to_do?.rich_text),
+      completed: Boolean(block.to_do?.checked),
+    }))
+    .filter((task) => task.text !== "");
+
+  return { found: true, tasks };
+};
+
+const loadLegacySectionTasks = async (pageId: string, sectionTitle: string, token: string) => {
   const pageChildren = await listBlockChildren(pageId, token);
-  const sectionBlock = pageChildren.find((block) => isSectionBlock(block, sectionTitle));
+  const sectionBlock = pageChildren.find((block) => isAppTodoToggle(block, sectionTitle));
 
   if (!sectionBlock) {
     return { found: false, tasks: [] as NotionTodoTask[] };
@@ -173,31 +345,55 @@ const loadSectionTasks = async (pageId: string, sectionTitle: string, token: str
 
 const saveSectionTasks = async (
   pageId: string,
+  folderName: string,
+  appTodoTitle: string,
+  tasks: Array<Partial<NotionTodoTask>>,
+  token: string,
+) => {
+  const normalizedTasks = normalizeTasks(tasks);
+  const songPageId = await resolveSongPageId(pageId, folderName, token);
+  const pageChildren = await listBlockChildren(songPageId, token);
+  const todoSection = findTodoSection(pageChildren);
+  const sectionBlock = todoSection.blocks.find((block) => isAppTodoToggle(block, appTodoTitle));
+
+  if (!sectionBlock) {
+    if (todoSection.heading) {
+      await appendChildren(
+        songPageId,
+        [createToggleBlock(appTodoTitle, normalizedTasks)],
+        token,
+        todoSection.heading.id,
+      );
+    } else {
+      await appendChildren(
+        songPageId,
+        [createHeadingBlock("Todo"), createToggleBlock(appTodoTitle, normalizedTasks)],
+        token,
+      );
+    }
+
+    return { updated: true, created: true };
+  }
+
+  const sectionChildren = await listBlockChildren(sectionBlock.id, token);
+  await archiveBlocks(sectionChildren, token);
+  await appendChildren(sectionBlock.id, normalizedTasks.map(createTodoBlock), token);
+
+  return { updated: true, created: false };
+};
+
+const saveLegacySectionTasks = async (
+  pageId: string,
   sectionTitle: string,
   tasks: Array<Partial<NotionTodoTask>>,
   token: string,
 ) => {
   const normalizedTasks = normalizeTasks(tasks);
   const pageChildren = await listBlockChildren(pageId, token);
-  const sectionBlock = pageChildren.find((block) => isSectionBlock(block, sectionTitle));
+  const sectionBlock = pageChildren.find((block) => isAppTodoToggle(block, sectionTitle));
 
   if (!sectionBlock) {
-    await appendChildren(
-      pageId,
-      [
-        {
-          object: "block",
-          type: "toggle",
-          toggle: {
-            rich_text: createRichText(sectionTitle),
-            color: "default",
-            children: normalizedTasks.map(createTodoBlock),
-          },
-        },
-      ],
-      token,
-    );
-
+    await appendChildren(pageId, [createToggleBlock(sectionTitle, normalizedTasks)], token);
     return { updated: true, created: true };
   }
 
@@ -229,7 +425,10 @@ export const createNotionTodoResponse = async ({
   }
 
   const pageId = (method === "GET" ? searchParams.get("pageId") : body?.pageId)?.trim();
-  const sectionTitle = (method === "GET" ? searchParams.get("sectionTitle") : body?.sectionTitle)?.trim();
+  const sectionTitle = (
+    method === "GET" ? searchParams.get("sectionTitle") : body?.sectionTitle
+  )?.trim();
+  const folderName = (method === "GET" ? searchParams.get("folderName") : body?.folderName)?.trim();
 
   if (!pageId || !sectionTitle) {
     return jsonResponse(400, { error: "pageId and sectionTitle are required" });
@@ -237,12 +436,16 @@ export const createNotionTodoResponse = async ({
 
   try {
     if (method === "GET") {
-      const result = await loadSectionTasks(pageId, sectionTitle, token);
+      const result = folderName
+        ? await loadSectionTasks(pageId, folderName, sectionTitle, token)
+        : await loadLegacySectionTasks(pageId, sectionTitle, token);
       return jsonResponse(200, result);
     }
 
     if (method === "POST") {
-      const result = await saveSectionTasks(pageId, sectionTitle, body?.tasks ?? [], token);
+      const result = folderName
+        ? await saveSectionTasks(pageId, folderName, sectionTitle, body?.tasks ?? [], token)
+        : await saveLegacySectionTasks(pageId, sectionTitle, body?.tasks ?? [], token);
       return jsonResponse(200, result);
     }
 
