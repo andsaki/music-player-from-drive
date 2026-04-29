@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import Dialog from "@mui/material/Dialog";
 import DialogTitle from "@mui/material/DialogTitle";
 import DialogContent from "@mui/material/DialogContent";
@@ -20,12 +20,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import DeleteIcon from "@mui/icons-material/Delete";
 import { TODO_FILE_NAME, LOCAL_STORAGE_KEYS } from "../constants";
 import { type MemoModalProps, type Task } from "../types";
-import {
-  createTask,
-  parseTasksFromText,
-  sortTasks,
-  tasksToMarkdown,
-} from "../utils/tasks";
+import { createTask, parseTasksFromText, sortTasks, tasksToMarkdown } from "../utils/tasks";
 import {
   createTodoFile,
   findTodoFileInFolder,
@@ -38,6 +33,7 @@ import {
   saveTasksToNotion,
 } from "../utils/notionTodo";
 import { GoogleApiError } from "../utils/googleApi";
+import { publishRealtimeSync, subscribeRealtimeSync } from "../utils/realtimeSync";
 
 const isAuthorizationError = (error: unknown) => {
   if (error instanceof GoogleApiError) {
@@ -119,15 +115,19 @@ const MemoModal: React.FC<MemoModalProps> = ({
   const [isLoadingTodo, setIsLoadingTodo] = useState(false);
   const [isSavingTodo, setIsSavingTodo] = useState(false);
   const [isSyncingNotion, setIsSyncingNotion] = useState(false);
+  const latestRemoteMemoTimestampRef = useRef(0);
   const notionSyncEnabled = isNotionSyncConfigured();
 
-  const cacheTasksLocally = useCallback((currentTasks: Task[]) => {
-    if (!folderId || folderId === "all") {
-      return;
-    }
+  const cacheTasksLocally = useCallback(
+    (currentTasks: Task[]) => {
+      if (!folderId || folderId === "all") {
+        return;
+      }
 
-    localStorage.setItem(getMemoStorageKey(folderId), JSON.stringify(currentTasks));
-  }, [folderId]);
+      localStorage.setItem(getMemoStorageKey(folderId), JSON.stringify(currentTasks));
+    },
+    [folderId],
+  );
 
   const loadTasksFromLocalCache = useCallback(() => {
     if (!folderId || folderId === "all") {
@@ -147,6 +147,38 @@ const MemoModal: React.FC<MemoModalProps> = ({
     }
   }, [folderId]);
 
+  const applyTasksUpdate = useCallback(
+    (nextTasks: Task[], options: { publish?: boolean } = {}) => {
+      const sortedTasks = sortTasks(nextTasks);
+      setTasks(sortedTasks);
+      cacheTasksLocally(sortedTasks);
+
+      if (options.publish && folderId && folderId !== "all") {
+        publishRealtimeSync({ type: "memo-tasks", folderId, tasks: sortedTasks });
+      }
+    },
+    [cacheTasksLocally, folderId],
+  );
+
+  useEffect(() => {
+    return subscribeRealtimeSync((message) => {
+      if (message.type !== "memo-tasks" || message.folderId !== folderId) {
+        return;
+      }
+
+      if (message.timestamp <= latestRemoteMemoTimestampRef.current) {
+        return;
+      }
+
+      latestRemoteMemoTimestampRef.current = message.timestamp;
+      const syncedTasks = sortTasks(message.tasks);
+      setTasks(syncedTasks);
+      cacheTasksLocally(syncedTasks);
+      setFeedbackMessage("別の画面から TODO を同期しました。");
+      setErrorMessage(null);
+    });
+  }, [cacheTasksLocally, folderId]);
+
   useEffect(() => {
     if (!open) {
       return;
@@ -162,7 +194,7 @@ const MemoModal: React.FC<MemoModalProps> = ({
     }
 
     if (!accessToken) {
-      setTasks(loadTasksFromLocalCache());
+      applyTasksUpdate(loadTasksFromLocalCache());
       setTodoFileId(null);
       setErrorMessage(
         notionSyncEnabled
@@ -179,7 +211,7 @@ const MemoModal: React.FC<MemoModalProps> = ({
 
         if (!todoFile) {
           const cachedTasks = loadTasksFromLocalCache();
-          setTasks(cachedTasks);
+          applyTasksUpdate(cachedTasks);
           setTodoFileId(null);
           setFeedbackMessage(
             cachedTasks.length > 0
@@ -192,9 +224,8 @@ const MemoModal: React.FC<MemoModalProps> = ({
         const content = await readTodoFile(accessToken, todoFile.id);
         const loadedTasks = parseTasksFromText(content);
 
-        setTasks(loadedTasks);
+        applyTasksUpdate(loadedTasks);
         setTodoFileId(todoFile.id);
-        cacheTasksLocally(loadedTasks);
         setFeedbackMessage(`${TODO_FILE_NAME} を Drive から読み込みました。`);
       } catch (error) {
         console.error("Failed to load TODO from Drive", error);
@@ -206,7 +237,7 @@ const MemoModal: React.FC<MemoModalProps> = ({
         }
 
         const cachedTasks = loadTasksFromLocalCache();
-        setTasks(cachedTasks);
+        applyTasksUpdate(cachedTasks);
         setErrorMessage("Drive から TODO を読み込めなかったため、端末内の下書きを表示しています。");
       } finally {
         setIsLoadingTodo(false);
@@ -214,7 +245,15 @@ const MemoModal: React.FC<MemoModalProps> = ({
     };
 
     void loadTodo();
-  }, [open, folderId, accessToken, notionSyncEnabled, onAuthError, cacheTasksLocally, loadTasksFromLocalCache]);
+  }, [
+    open,
+    folderId,
+    accessToken,
+    notionSyncEnabled,
+    onAuthError,
+    applyTasksUpdate,
+    loadTasksFromLocalCache,
+  ]);
 
   const handleAddTask = () => {
     if (newTask.trim() === "") {
@@ -222,8 +261,7 @@ const MemoModal: React.FC<MemoModalProps> = ({
     }
 
     const newTasks = [createTask(newTask.trim()), ...tasks];
-    setTasks(newTasks);
-    cacheTasksLocally(newTasks);
+    applyTasksUpdate(newTasks, { publish: true });
     setNewTask("");
     setFeedbackMessage(null);
     setErrorMessage(null);
@@ -233,16 +271,14 @@ const MemoModal: React.FC<MemoModalProps> = ({
     const newTasks = sortTasks(
       tasks.map((task) => (task.id === id ? { ...task, completed: !task.completed } : task)),
     );
-    setTasks(newTasks);
-    cacheTasksLocally(newTasks);
+    applyTasksUpdate(newTasks, { publish: true });
     setFeedbackMessage(null);
     setErrorMessage(null);
   };
 
   const handleDeleteTask = (id: string) => {
     const newTasks = tasks.filter((task) => task.id !== id);
-    setTasks(newTasks);
-    cacheTasksLocally(newTasks);
+    applyTasksUpdate(newTasks, { publish: true });
     setFeedbackMessage(null);
     setErrorMessage(null);
   };
@@ -260,7 +296,7 @@ const MemoModal: React.FC<MemoModalProps> = ({
       const todoFile = await findTodoFileInFolder(accessToken, folderId);
       if (!todoFile) {
         const cachedTasks = loadTasksFromLocalCache();
-        setTasks(cachedTasks);
+        applyTasksUpdate(cachedTasks, { publish: true });
         setTodoFileId(null);
         setFeedbackMessage(
           cachedTasks.length > 0
@@ -273,9 +309,8 @@ const MemoModal: React.FC<MemoModalProps> = ({
       const content = await readTodoFile(accessToken, todoFile.id);
       const loadedTasks = parseTasksFromText(content);
 
-      setTasks(loadedTasks);
+      applyTasksUpdate(loadedTasks, { publish: true });
       setTodoFileId(todoFile.id);
-      cacheTasksLocally(loadedTasks);
       setFeedbackMessage(`${TODO_FILE_NAME} を再読み込みしました。`);
     } catch (error) {
       console.error("Failed to reload TODO from Drive", error);
@@ -345,8 +380,7 @@ const MemoModal: React.FC<MemoModalProps> = ({
 
     try {
       const result = await loadTasksFromNotion(folderName);
-      setTasks(result.tasks);
-      cacheTasksLocally(result.tasks);
+      applyTasksUpdate(result.tasks, { publish: true });
       setFeedbackMessage(
         result.found
           ? "Notion の App TODO Sync から読み込みました。"
@@ -354,7 +388,9 @@ const MemoModal: React.FC<MemoModalProps> = ({
       );
     } catch (error) {
       console.error("Failed to load TODO from Notion", error);
-      setErrorMessage(error instanceof Error ? error.message : "Notion から TODO を読み込めませんでした。");
+      setErrorMessage(
+        error instanceof Error ? error.message : "Notion から TODO を読み込めませんでした。",
+      );
     } finally {
       setIsSyncingNotion(false);
     }
@@ -408,22 +444,60 @@ const MemoModal: React.FC<MemoModalProps> = ({
         <DialogContent>
           <Stack spacing={1.5} sx={{ mb: 2, mt: 1 }}>
             {folderId === "all" && (
-              <Alert severity="warning">TODO を使うには「All Folders」以外の曲フォルダを選択してください。</Alert>
+              <Alert severity="warning">
+                TODO を使うには「All Folders」以外の曲フォルダを選択してください。
+              </Alert>
             )}
             <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
-              <Button onClick={handleReloadFromDrive} variant="outlined" disabled={folderId === "all" || isLoadingTodo || isSavingTodo || isSyncingNotion || !accessToken}>
+              <Button
+                onClick={handleReloadFromDrive}
+                variant="outlined"
+                disabled={
+                  folderId === "all" ||
+                  isLoadingTodo ||
+                  isSavingTodo ||
+                  isSyncingNotion ||
+                  !accessToken
+                }
+              >
                 Driveから再読込
               </Button>
-              <Button onClick={handleLoadFromNotion} variant="outlined" disabled={folderId === "all" || isLoadingTodo || isSavingTodo || isSyncingNotion || !notionSyncEnabled}>
+              <Button
+                onClick={handleLoadFromNotion}
+                variant="outlined"
+                disabled={
+                  folderId === "all" ||
+                  isLoadingTodo ||
+                  isSavingTodo ||
+                  isSyncingNotion ||
+                  !notionSyncEnabled
+                }
+              >
                 {isSyncingNotion ? "Notion同期中..." : "Notionから読込"}
               </Button>
-              <Button onClick={handleSaveToNotion} variant="outlined" disabled={folderId === "all" || isLoadingTodo || isSavingTodo || isSyncingNotion || !notionSyncEnabled}>
+              <Button
+                onClick={handleSaveToNotion}
+                variant="outlined"
+                disabled={
+                  folderId === "all" ||
+                  isLoadingTodo ||
+                  isSavingTodo ||
+                  isSyncingNotion ||
+                  !notionSyncEnabled
+                }
+              >
                 {isSyncingNotion ? "Notion同期中..." : "Notionへ保存"}
               </Button>
             </Stack>
           </Stack>
           {isLoadingTodo ? (
-            <Stack direction="row" spacing={1} alignItems="center" justifyContent="center" sx={{ py: 6 }}>
+            <Stack
+              direction="row"
+              spacing={1}
+              alignItems="center"
+              justifyContent="center"
+              sx={{ py: 6 }}
+            >
               <CircularProgress size={24} />
               <span>Drive から TODO を読み込み中...</span>
             </Stack>
@@ -446,7 +520,12 @@ const MemoModal: React.FC<MemoModalProps> = ({
                 }}
                 disabled={folderId === "all" || isSyncingNotion}
               />
-              <Button onClick={handleAddTask} variant="contained" sx={{ mt: 2, mb: 2 }} disabled={folderId === "all" || isSyncingNotion}>
+              <Button
+                onClick={handleAddTask}
+                variant="contained"
+                sx={{ mt: 2, mb: 2 }}
+                disabled={folderId === "all" || isSyncingNotion}
+              >
                 Add Task
               </Button>
               <Divider />
@@ -503,8 +582,14 @@ const MemoModal: React.FC<MemoModalProps> = ({
           )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleClose} disabled={isSavingTodo || isSyncingNotion}>Cancel</Button>
-          <Button onClick={handleSaveMemo} variant="contained" disabled={folderId === "all" || isLoadingTodo || isSavingTodo || isSyncingNotion}>
+          <Button onClick={handleClose} disabled={isSavingTodo || isSyncingNotion}>
+            Cancel
+          </Button>
+          <Button
+            onClick={handleSaveMemo}
+            variant="contained"
+            disabled={folderId === "all" || isLoadingTodo || isSavingTodo || isSyncingNotion}
+          >
             {isSavingTodo ? "Driveに保存中..." : "Driveに保存"}
           </Button>
         </DialogActions>
@@ -516,7 +601,12 @@ const MemoModal: React.FC<MemoModalProps> = ({
         anchorOrigin={{ vertical: "top", horizontal: "right" }}
         sx={memoSnackbarSx}
       >
-        <Alert onClose={handleFeedbackClose} severity="success" variant="filled" sx={getMemoToastSx("success")}>
+        <Alert
+          onClose={handleFeedbackClose}
+          severity="success"
+          variant="filled"
+          sx={getMemoToastSx("success")}
+        >
           {feedbackMessage}
         </Alert>
       </Snackbar>
@@ -527,7 +617,12 @@ const MemoModal: React.FC<MemoModalProps> = ({
         anchorOrigin={{ vertical: "top", horizontal: "right" }}
         sx={memoSnackbarSx}
       >
-        <Alert onClose={handleErrorClose} severity="error" variant="filled" sx={getMemoToastSx("error")}>
+        <Alert
+          onClose={handleErrorClose}
+          severity="error"
+          variant="filled"
+          sx={getMemoToastSx("error")}
+        >
           {errorMessage}
         </Alert>
       </Snackbar>

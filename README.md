@@ -87,6 +87,9 @@ VITE_GOOGLE_CLIENT_ID=your_client_id_here
 VITE_NOTION_SYNC_PAGE_ID=your_notion_page_id_here
 NOTION_API_KEY=your_notion_integration_secret
 
+# WebSocket リアルタイム同期を使う場合
+VITE_SYNC_WEBSOCKET_URL=wss://your-sync-server.example.com
+
 # 開発サーバーを起動
 npm run dev
 ```
@@ -110,6 +113,7 @@ npm run preview
 5. **共有**: 共有アイコンから曲のリンクをコピー
 6. **制作TODO運用**: 曲フォルダを選んで `メモ` を開くと、そのフォルダ内の `TODO.md` を自動で読み込みます。保存すると同じ Drive フォルダ内の `TODO.md` を更新します。
 7. **Notion同期**: `VITE_NOTION_SYNC_PAGE_ID` と `NOTION_API_KEY` を設定すると、`メモ` 画面から `Notionから読込` / `Notionへ保存` が使えます。Notion ページ内には `App TODO Sync: <フォルダ名>` のトグルブロックを作り、その子要素のチェックリストだけを同期します。
+8. **リアルタイム同期**: `VITE_SYNC_WEBSOCKET_URL` を設定すると、フォルダ一覧とメモの変更を WebSocket 経由で他の画面へ同期します。未設定でも同じブラウザ内の別タブは BroadcastChannel で同期します。
 
 ## 🎛 iPhone PWA での TODO 運用
 
