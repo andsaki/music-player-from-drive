@@ -6,6 +6,7 @@ import DialogActions from "@mui/material/DialogActions";
 import Alert from "@mui/material/Alert";
 import Button from "@mui/material/Button";
 import Snackbar from "@mui/material/Snackbar";
+import DialogContentText from "@mui/material/DialogContentText";
 import Stack from "@mui/material/Stack";
 import List from "@mui/material/List";
 import ListItem from "@mui/material/ListItem";
@@ -124,6 +125,11 @@ const MemoModal: React.FC<MemoModalProps> = ({
   const [isLoadingTodo, setIsLoadingTodo] = useState(false);
   const [isSavingTodo, setIsSavingTodo] = useState(false);
   const [isSyncingNotion, setIsSyncingNotion] = useState(false);
+  const [isNotionLoadConfirmOpen, setIsNotionLoadConfirmOpen] = useState(false);
+  const [notionLoadBackupMeta, setNotionLoadBackupMeta] = useState<{
+    savedAt: number;
+    tasks: Task[];
+  } | null>(null);
   const latestRemoteMemoTimestampRef = useRef(0);
   const notionSyncEnabled = isNotionSyncConfigured();
 
@@ -162,6 +168,58 @@ const MemoModal: React.FC<MemoModalProps> = ({
     },
     [folderId],
   );
+
+  const getNotionBackupStorageKey = useCallback(
+    () => (folderId && folderId !== "all" ? `${LOCAL_STORAGE_KEYS.USER_MEMO_NOTION_BACKUP_PREFIX}${folderId}` : ""),
+    [folderId],
+  );
+
+  const loadNotionBackup = useCallback(() => {
+    const storageKey = getNotionBackupStorageKey();
+    if (!storageKey) {
+      return null;
+    }
+
+    const savedBackup = localStorage.getItem(storageKey);
+    if (!savedBackup) {
+      return null;
+    }
+
+    try {
+      return JSON.parse(savedBackup) as { savedAt: number; tasks: Task[] };
+    } catch (error) {
+      console.error("Failed to parse Notion backup from localStorage", error);
+      return null;
+    }
+  }, [getNotionBackupStorageKey]);
+
+  const cacheNotionBackup = useCallback(
+    (currentTasks: Task[]) => {
+      const storageKey = getNotionBackupStorageKey();
+      if (!storageKey) {
+        return;
+      }
+
+      const nextBackup = {
+        savedAt: Date.now(),
+        tasks: currentTasks,
+      };
+
+      localStorage.setItem(storageKey, JSON.stringify(nextBackup));
+      setNotionLoadBackupMeta(nextBackup);
+    },
+    [getNotionBackupStorageKey],
+  );
+
+  const clearNotionBackup = useCallback(() => {
+    const storageKey = getNotionBackupStorageKey();
+    if (!storageKey) {
+      return;
+    }
+
+    localStorage.removeItem(storageKey);
+    setNotionLoadBackupMeta(null);
+  }, [getNotionBackupStorageKey]);
 
   const loadTasksFromLocalCache = useCallback(() => {
     if (!folderId || folderId === "all") {
@@ -224,8 +282,11 @@ const MemoModal: React.FC<MemoModalProps> = ({
     if (folderId === "all") {
       setTasks([]);
       setTodoFileId(null);
+      setNotionLoadBackupMeta(null);
       return;
     }
+
+    setNotionLoadBackupMeta(loadNotionBackup());
 
     if (!accessToken) {
       applyTasksUpdate(loadTasksFromLocalCache());
@@ -287,6 +348,7 @@ const MemoModal: React.FC<MemoModalProps> = ({
     onAuthError,
     applyTasksUpdate,
     loadTasksFromLocalCache,
+    loadNotionBackup,
   ]);
 
   const handleAddTask = () => {
@@ -419,11 +481,20 @@ const MemoModal: React.FC<MemoModalProps> = ({
       return;
     }
 
+    setIsNotionLoadConfirmOpen(true);
+  };
+
+  const executeLoadFromNotion = async () => {
+    if (folderId === "all" || !notionSyncEnabled) {
+      return;
+    }
+
     setIsSyncingNotion(true);
     setFeedbackMessage(null);
     setErrorMessage(null);
 
     try {
+      cacheNotionBackup(tasks);
       const result = await loadTasksFromNotion(folderName);
       applyTasksUpdate(result.tasks, { publish: true });
       setFeedbackMessage(
@@ -438,7 +509,20 @@ const MemoModal: React.FC<MemoModalProps> = ({
       );
     } finally {
       setIsSyncingNotion(false);
+      setIsNotionLoadConfirmOpen(false);
     }
+  };
+
+  const handleRestoreNotionBackup = () => {
+    if (!notionLoadBackupMeta) {
+      setErrorMessage("復元できる Notion 読込バックアップがありません。");
+      return;
+    }
+
+    applyTasksUpdate(notionLoadBackupMeta.tasks, { publish: true });
+    clearNotionBackup();
+    setFeedbackMessage("Notion 読込前の TODO を復元しました。");
+    setErrorMessage(null);
   };
 
   const handleSaveToNotion = async () => {
@@ -453,6 +537,7 @@ const MemoModal: React.FC<MemoModalProps> = ({
     try {
       await saveTasksToNotion(folderName, tasks);
       cacheTasksLocally(tasks);
+      clearNotionBackup();
       setFeedbackMessage("Notion の曲ページ内 App TODO に保存しました。");
     } catch (error) {
       console.error("Failed to save TODO to Notion", error);
@@ -497,6 +582,18 @@ const MemoModal: React.FC<MemoModalProps> = ({
               <Alert severity="info">
                 Notion 同期は未設定です。.env に VITE_NOTION_SYNC_PAGE_ID と NOTION_API_KEY
                 を設定し、対象ページを Notion integration に共有してください。
+              </Alert>
+            )}
+            {notionSyncEnabled && notionLoadBackupMeta && (
+              <Alert
+                severity="warning"
+                action={
+                  <Button color="inherit" size="small" onClick={handleRestoreNotionBackup}>
+                    復元
+                  </Button>
+                }
+              >
+                直前の Notion 読込前の TODO が残っています。
               </Alert>
             )}
             <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
@@ -737,6 +834,30 @@ const MemoModal: React.FC<MemoModalProps> = ({
             disabled={folderId === "all" || isLoadingTodo || isSavingTodo || isSyncingNotion}
           >
             {isSavingTodo ? "Driveに保存中..." : "Driveに保存"}
+          </Button>
+        </DialogActions>
+      </Dialog>
+      <Dialog
+        open={isNotionLoadConfirmOpen}
+        onClose={() => setIsNotionLoadConfirmOpen(false)}
+      >
+        <DialogTitle>Notion の TODO を読み込みますか</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            現在の {taskCounts.all} 件の TODO は読み込み前にバックアップします。その後、Notion の
+            App TODO で置き換えます。
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setIsNotionLoadConfirmOpen(false)} disabled={isSyncingNotion}>
+            Cancel
+          </Button>
+          <Button
+            onClick={() => void executeLoadFromNotion()}
+            variant="contained"
+            disabled={isSyncingNotion}
+          >
+            読み込む
           </Button>
         </DialogActions>
       </Dialog>
