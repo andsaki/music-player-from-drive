@@ -33,6 +33,7 @@ import {
 import { type DriveFile, type FolderOption } from "./types";
 import { getCachedMusicFiles, cacheMusicFiles } from "./utils/cache";
 import { GoogleApiError, googleApiBlob, googleApiJson } from "./utils/googleApi";
+import { logger } from "./utils/logger";
 import { publishRealtimeSync, subscribeRealtimeSync } from "./utils/realtimeSync";
 import {
   ALL_FOLDERS_OPTION,
@@ -117,7 +118,7 @@ function App() {
         return token;
       } else {
         // トークンが期限切れ - セキュリティのため削除
-        console.log("[Security] Access token expired, clearing from storage");
+        logger.debug("[Security] Access token expired, clearing from storage");
         localStorage.removeItem(LOCAL_STORAGE_KEYS.GOOGLE_ACCESS_TOKEN);
         localStorage.removeItem(LOCAL_STORAGE_KEYS.TOKEN_EXPIRY);
         localStorage.removeItem(LOCAL_STORAGE_KEYS.TOKEN_SCOPE_VERSION);
@@ -217,7 +218,7 @@ function App() {
   // Googleログイン処理（クライアントサイド）
   const googleLogin = useGoogleLogin({
     onSuccess: (tokenResponse) => {
-      console.log("Login successful! Token:", tokenResponse);
+      logger.debug("Login successful! Token:", tokenResponse);
       setAccessToken(tokenResponse.access_token);
 
       // トークンと有効期限を保存（セキュリティ強化）
@@ -229,9 +230,9 @@ function App() {
       localStorage.setItem(LOCAL_STORAGE_KEYS.TOKEN_EXPIRY, expiryTime.toString());
       localStorage.setItem(LOCAL_STORAGE_KEYS.TOKEN_SCOPE_VERSION, GOOGLE_TOKEN_SCOPE_VERSION);
 
-      console.log(`[Security] Token will expire at: ${new Date(expiryTime).toLocaleString()}`);
+      logger.debug(`[Security] Token will expire at: ${new Date(expiryTime).toLocaleString()}`);
     },
-    onError: (errorResponse) => console.log("Login failed! Error:", errorResponse),
+    onError: (errorResponse) => logger.debug("Login failed! Error:", errorResponse),
     scope: GOOGLE_DRIVE_SCOPE,
     prompt: "", // 既存のGoogleセッションを使用（アカウント選択画面をスキップ）
   });
@@ -251,7 +252,7 @@ function App() {
       audioRef.current.pause();
       audioRef.current.src = "";
     }
-    console.log("[Security] User logged out, tokens cleared");
+    logger.debug("[Security] User logged out, tokens cleared");
   }, []);
 
   // トークンの有効期限を定期的にチェック（セキュリティ強化）
@@ -264,7 +265,7 @@ function App() {
       if (expiry) {
         const expiryTime = parseInt(expiry, 10);
         if (Date.now() >= expiryTime) {
-          console.log("[Security] Access token expired, logging out");
+          logger.debug("[Security] Access token expired, logging out");
           handleLogout();
           setErrorMessage("セッションの有効期限が切れました。再度ログインしてください。");
         }
@@ -298,8 +299,8 @@ function App() {
     setErrorMessage(null); // エラーメッセージをクリア
     try {
       const allFiles: DriveFile[] = [];
-      console.log(`[fetchMusicFiles] Starting fetch for ${folderOptions.length} folders`);
-      console.log("[fetchMusicFiles] Folder options:", folderOptions);
+      logger.debug(`[fetchMusicFiles] Starting fetch for ${folderOptions.length} folders`);
+      logger.debug("[fetchMusicFiles] Folder options:", folderOptions);
 
       // フォルダが追加されていない場合（'all'オプションのみの場合）の警告
       const foldersToFetch = folderOptions.filter(
@@ -307,7 +308,7 @@ function App() {
       );
 
       if (foldersToFetch.length === 0) {
-        console.warn(
+        logger.warn(
           "[fetchMusicFiles] No folders configured! Please add folders to fetch music files.",
         );
         setErrorMessage(
@@ -320,12 +321,12 @@ function App() {
       // 定義された各フォルダから音楽ファイルをフェッチ（'all'オプションは除く）
       const failedFolders: string[] = [];
       for (const folder of foldersToFetch) {
-        console.log(`[fetchMusicFiles] Fetching files from folder: ${folder.name} (${folder.id})`);
+        logger.debug(`[fetchMusicFiles] Fetching files from folder: ${folder.name} (${folder.id})`);
 
         // まずキャッシュをチェック
         const cachedFiles = getCachedMusicFiles(folder.id);
         if (cachedFiles) {
-          console.log(
+          logger.debug(
             `[fetchMusicFiles] Using cached data for ${folder.name} (${cachedFiles.length} files)`,
           );
           allFiles.push(...cachedFiles);
@@ -346,7 +347,7 @@ function App() {
             },
           );
           const fetchedFiles = response.files || [];
-          console.log(`[fetchMusicFiles] Fetched ${fetchedFiles.length} files from ${folder.name}`);
+          logger.debug(`[fetchMusicFiles] Fetched ${fetchedFiles.length} files from ${folder.name}`);
 
           // 取得したデータをキャッシュに保存（10分間有効）
           cacheMusicFiles(folder.id, fetchedFiles);
@@ -359,7 +360,7 @@ function App() {
             handleLogout();
             return;
           }
-          console.error(`[fetchMusicFiles] Failed to fetch folder "${folder.name}":`, folderError);
+          logger.error(`[fetchMusicFiles] Failed to fetch folder "${folder.name}":`, folderError);
           failedFolders.push(folder.name);
         }
       }
@@ -368,7 +369,7 @@ function App() {
         (a, b) => new Date(b.modifiedTime).getTime() - new Date(a.modifiedTime).getTime(),
       );
 
-      console.log(`[fetchMusicFiles] Total fetched music files: ${allFiles.length}`);
+      logger.debug(`[fetchMusicFiles] Total fetched music files: ${allFiles.length}`);
       setAllFetchedMusicFiles(allFiles); // 全ての音楽ファイルをstateに保存
 
       if (failedFolders.length > 0) {
@@ -377,7 +378,7 @@ function App() {
         );
       }
     } catch (error: unknown) {
-      console.error("[fetchMusicFiles] Unexpected error:", error);
+      logger.error("[fetchMusicFiles] Unexpected error:", error);
       setErrorMessage(`予期しないエラーが発生しました: ${String(error)}`);
     } finally {
       setLoading(false); // フェッチ完了後にローディング状態をfalseに設定
@@ -387,7 +388,7 @@ function App() {
   // アクセストークンが取得できたら音楽ファイルをフェッチ
   useEffect(() => {
     if (accessToken) {
-      console.log("Fetching music files with access token");
+      logger.debug("Fetching music files with access token");
       fetchMusicFiles();
     }
   }, [accessToken, folderOptions, fetchMusicFiles]);
@@ -409,7 +410,7 @@ function App() {
   const playMusic = async (file: DriveFile) => {
     setSelectedFile(file); // 選択中のファイルを更新
     setPlayingLoading(true); // オーディオフェッチ開始時に再生ローディング状態をtrueに設定
-    console.log("Playing loading set to true for file:", file.name);
+    logger.debug("Playing loading set to true for file:", file.name);
     try {
       const audioBlob = await googleApiBlob(
         `https://www.googleapis.com/drive/v3/files/${file.id}`, // Google Driveからメディアコンテンツを取得
@@ -423,10 +424,10 @@ function App() {
         audioRef.current.play(); // 音楽を再生
       }
     } catch (error: unknown) {
-      console.error("Error playing music:", error);
+      logger.error("Error playing music:", error);
     } finally {
       setPlayingLoading(false); // 再生完了後にローディング状態をfalseに設定
-      console.log("Playing loading set to false for file:", file.name);
+      logger.debug("Playing loading set to false for file:", file.name);
     }
   };
 

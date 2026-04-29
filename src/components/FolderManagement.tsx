@@ -10,6 +10,7 @@ import CircularProgress from "@mui/material/CircularProgress";
 import { type FolderManagementProps } from "../types";
 import { getCachedFolderMetadata, cacheFolderMetadata } from "../utils/cache";
 import { googleApiJson } from "../utils/googleApi";
+import { logger } from "../utils/logger";
 
 /**
  * フォルダ管理モーダルコンポーネント。
@@ -44,7 +45,7 @@ const FolderManagement: React.FC<FolderManagementProps> = ({
         // まずキャッシュをチェック
         const cachedMetadata = getCachedFolderMetadata(folderId);
         if (cachedMetadata) {
-          console.log(`[FolderManagement] Using cached metadata for folder: ${folderId}`);
+          logger.debug(`[FolderManagement] Using cached metadata for folder: ${folderId}`);
           if (cachedMetadata.mimeType === "application/vnd.google-apps.folder") {
             setFolderName(cachedMetadata.name);
           } else {
@@ -80,7 +81,7 @@ const FolderManagement: React.FC<FolderManagementProps> = ({
             setFolderName("");
           }
         } catch (err) {
-          console.error("Error fetching folder name:", err);
+          logger.error("Error fetching folder name:", err);
           setError("Failed to fetch folder name. Please check the ID.");
           setFolderName("");
         } finally {
