@@ -1,1 +1,7 @@
-dummy content
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="112" fill="#000"/>
+  <circle cx="256" cy="256" r="174" fill="#000"/>
+  <circle cx="256" cy="256" r="44" fill="#fff"/>
+  <path d="M239 214L239 298L314 256L239 214Z" fill="#fff"/>
+  <path d="M116 218C136 204 157 197 180 197M103 257C128 241 153 233 180 233M116 296C136 308 157 315 180 315M332 197C356 197 377 204 397 218M332 233C359 233 384 241 409 257M332 315C355 315 376 308 396 296" stroke="#000" stroke-width="22" stroke-linecap="round"/>
+</svg>
