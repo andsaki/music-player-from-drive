@@ -33,6 +33,7 @@ import {
 import { type DriveFile, type FolderOption } from "./types";
 import { getCachedMusicFiles, cacheMusicFiles } from "./utils/cache";
 import { GoogleApiError, googleApiBlob, googleApiJson } from "./utils/googleApi";
+import { publishRealtimeSync, subscribeRealtimeSync } from "./utils/realtimeSync";
 import {
   ALL_FOLDERS_OPTION,
   GOOGLE_DRIVE_SCOPE,
@@ -63,9 +64,35 @@ function App() {
     }
   });
 
-  // folderOptionsが変更されるたびにlocalStorageに保存
+  const applyingRemoteFolderOptionsRef = useRef(false);
+  const didInitializeFolderSyncRef = useRef(false);
+
+  useEffect(() => {
+    return subscribeRealtimeSync((message) => {
+      if (message.type !== "folder-options") {
+        return;
+      }
+
+      applyingRemoteFolderOptionsRef.current = true;
+      setFolderOptions(message.folderOptions);
+    });
+  }, []);
+
+  // folderOptionsが変更されるたびにlocalStorageに保存し、他の画面へ同期する
   useEffect(() => {
     localStorage.setItem(LOCAL_STORAGE_KEYS.FOLDER_OPTIONS, JSON.stringify(folderOptions));
+
+    if (!didInitializeFolderSyncRef.current) {
+      didInitializeFolderSyncRef.current = true;
+      return;
+    }
+
+    if (applyingRemoteFolderOptionsRef.current) {
+      applyingRemoteFolderOptionsRef.current = false;
+      return;
+    }
+
+    publishRealtimeSync({ type: "folder-options", folderOptions });
   }, [folderOptions]);
 
   // アクセストークン（Drive APIコール用）
@@ -126,6 +153,12 @@ function App() {
   const [snackbarMessage, setSnackbarMessage] = useState("");
   const [undoFolder, setUndoFolder] = useState<FolderOption | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!folderOptions.some((folder) => folder.id === currentFilterFolderId)) {
+      setCurrentFilterFolderId(ALL_FOLDERS_OPTION.id);
+    }
+  }, [currentFilterFolderId, folderOptions]);
 
   // フォルダを曲の最新更新日時でソート
   const sortedFolderOptions = useMemo(() => {
