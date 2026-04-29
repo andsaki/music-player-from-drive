@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Dialog from "@mui/material/Dialog";
 import DialogTitle from "@mui/material/DialogTitle";
 import DialogContent from "@mui/material/DialogContent";
@@ -17,6 +17,7 @@ import TextField from "@mui/material/TextField";
 import Divider from "@mui/material/Divider";
 import CircularProgress from "@mui/material/CircularProgress";
 import { motion, AnimatePresence } from "framer-motion";
+import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import DeleteIcon from "@mui/icons-material/Delete";
 import { TODO_FILE_NAME, LOCAL_STORAGE_KEYS } from "../constants";
 import { type MemoModalProps, type Task } from "../types";
@@ -115,6 +116,8 @@ const MemoModal: React.FC<MemoModalProps> = ({
 }) => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [newTask, setNewTask] = useState("");
+  const [taskSearch, setTaskSearch] = useState("");
+  const [taskFilter, setTaskFilter] = useState<"open" | "all" | "done">("open");
   const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [todoFileId, setTodoFileId] = useState<string | null>(null);
@@ -123,6 +126,31 @@ const MemoModal: React.FC<MemoModalProps> = ({
   const [isSyncingNotion, setIsSyncingNotion] = useState(false);
   const latestRemoteMemoTimestampRef = useRef(0);
   const notionSyncEnabled = isNotionSyncConfigured();
+
+  const taskCounts = useMemo(() => {
+    const openCount = tasks.filter((task) => !task.completed).length;
+    return {
+      open: openCount,
+      done: tasks.length - openCount,
+      all: tasks.length,
+    };
+  }, [tasks]);
+
+  const visibleTasks = useMemo(() => {
+    const query = taskSearch.trim().toLowerCase();
+    return tasks.filter((task) => {
+      if (taskFilter === "open" && task.completed) {
+        return false;
+      }
+      if (taskFilter === "done" && !task.completed) {
+        return false;
+      }
+      if (query && !task.text.toLowerCase().includes(query)) {
+        return false;
+      }
+      return true;
+    });
+  }, [taskFilter, taskSearch, tasks]);
 
   const cacheTasksLocally = useCallback(
     (currentTasks: Task[]) => {
@@ -289,6 +317,17 @@ const MemoModal: React.FC<MemoModalProps> = ({
     setErrorMessage(null);
   };
 
+  const handleCopyTask = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setFeedbackMessage("TODO の文言をコピーしました。");
+      setErrorMessage(null);
+    } catch (error) {
+      console.error("Failed to copy task text", error);
+      setErrorMessage("クリップボードへコピーできませんでした。");
+    }
+  };
+
   const handleReloadFromDrive = async () => {
     if (!accessToken || folderId === "all") {
       return;
@@ -445,8 +484,8 @@ const MemoModal: React.FC<MemoModalProps> = ({
 
   return (
     <>
-      <Dialog open={open} onClose={handleClose} fullWidth maxWidth="sm" disableEnforceFocus>
-        <DialogTitle>Tasks for Folder: {folderName}</DialogTitle>
+      <Dialog open={open} onClose={handleClose} fullWidth maxWidth="md" disableEnforceFocus>
+        <DialogTitle>TODO: {folderName}</DialogTitle>
         <DialogContent>
           <Stack spacing={1.5} sx={{ mb: 2, mt: 1 }}>
             {folderId === "all" && (
@@ -509,81 +548,176 @@ const MemoModal: React.FC<MemoModalProps> = ({
             </Stack>
           ) : (
             <>
-              <TextField
-                autoFocus
-                margin="dense"
-                label="Add a new task"
-                type="text"
-                fullWidth
-                variant="outlined"
-                value={newTask}
-                onChange={(event) => setNewTask(event.target.value)}
-                placeholder="例: サビのリードを差し替える / 低域を整理する"
-                onKeyDown={(event) => {
-                  if (event.key === "Enter") {
-                    handleAddTask();
-                  }
-                }}
-                disabled={folderId === "all" || isSyncingNotion}
-              />
-              <Button
-                onClick={handleAddTask}
-                variant="contained"
-                sx={{ mt: 2, mb: 2 }}
-                disabled={folderId === "all" || isSyncingNotion}
+              <Stack
+                direction={{ xs: "column", sm: "row" }}
+                spacing={1}
+                alignItems="stretch"
+                sx={{ mb: 1.5 }}
               >
-                Add Task
-              </Button>
+                <TextField
+                  autoFocus
+                  label="新しいTODO"
+                  type="text"
+                  fullWidth
+                  variant="outlined"
+                  value={newTask}
+                  onChange={(event) => setNewTask(event.target.value)}
+                  placeholder="例: サビのリードを差し替える / 低域を整理する"
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") {
+                      handleAddTask();
+                    }
+                  }}
+                  disabled={folderId === "all" || isSyncingNotion}
+                  sx={{ flex: 1, minWidth: 0 }}
+                />
+                <Button
+                  onClick={handleAddTask}
+                  variant="contained"
+                  sx={{
+                    minWidth: { xs: "auto", sm: 104 },
+                    minHeight: 56,
+                    px: 3,
+                    flexShrink: 0,
+                    "&.Mui-disabled": {
+                      color: "#ffffff",
+                      background: "linear-gradient(135deg, #cc0058, #b83a78)",
+                      opacity: 0.82,
+                      boxShadow: "0 0 18px rgba(255, 0, 110, 0.35)",
+                    },
+                  }}
+                  disabled={folderId === "all" || isSyncingNotion}
+                >
+                  追加
+                </Button>
+              </Stack>
+              <Stack
+                direction={{ xs: "column", sm: "row" }}
+                spacing={1}
+                alignItems={{ xs: "stretch", sm: "center" }}
+                sx={{ mb: 1.5 }}
+              >
+                <TextField
+                  label="検索"
+                  type="search"
+                  size="small"
+                  fullWidth
+                  value={taskSearch}
+                  onChange={(event) => setTaskSearch(event.target.value)}
+                  placeholder="TODO の文言で絞り込み"
+                  sx={{ minWidth: 0 }}
+                />
+                <Stack
+                  direction="row"
+                  spacing={0.5}
+                  role="group"
+                  aria-label="TODO表示フィルタ"
+                  sx={{
+                    flexShrink: 0,
+                    "& .MuiButton-root": {
+                      flex: 1,
+                      minWidth: { xs: 0, sm: 72 },
+                      whiteSpace: "nowrap",
+                    },
+                  }}
+                >
+                  <Button
+                    size="small"
+                    onClick={() => setTaskFilter("open")}
+                    variant={taskFilter === "open" ? "contained" : "outlined"}
+                  >
+                    未完了 {taskCounts.open}
+                  </Button>
+                  <Button
+                    size="small"
+                    onClick={() => setTaskFilter("all")}
+                    variant={taskFilter === "all" ? "contained" : "outlined"}
+                  >
+                    全部 {taskCounts.all}
+                  </Button>
+                  <Button
+                    size="small"
+                    onClick={() => setTaskFilter("done")}
+                    variant={taskFilter === "done" ? "contained" : "outlined"}
+                  >
+                    完了 {taskCounts.done}
+                  </Button>
+                </Stack>
+              </Stack>
               <Divider />
-              <List>
-                <AnimatePresence>
-                  {tasks.map((task, index) => (
-                    <motion.div
-                      key={task.id}
-                      layout
-                      initial={{ opacity: 0, y: -10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: 10 }}
-                      transition={{ duration: 0.3 }}
-                    >
-                      <ListItem
-                        sx={{ my: 2 }}
-                        secondaryAction={
-                          <IconButton
-                            edge="end"
-                            aria-label="delete"
-                            onClick={() => handleDeleteTask(task.id)}
-                            sx={{ p: 0 }}
-                            disabled={folderId === "all" || isSyncingNotion}
-                          >
-                            <DeleteIcon />
-                          </IconButton>
-                        }
-                        disablePadding
+              {visibleTasks.length === 0 ? (
+                <Alert severity="info" sx={{ mt: 2 }}>
+                  表示できる TODO がありません。
+                </Alert>
+              ) : (
+                <List>
+                  <AnimatePresence>
+                    {visibleTasks.map((task, index) => (
+                      <motion.div
+                        key={task.id}
+                        layout
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: 10 }}
+                        transition={{ duration: 0.3 }}
                       >
-                        <ListItemIcon>
-                          <Checkbox
-                            edge="start"
-                            checked={task.completed}
-                            tabIndex={-1}
-                            disableRipple
-                            onChange={() => handleToggleTask(task.id)}
-                            disabled={folderId === "all" || isSyncingNotion}
-                          />
-                        </ListItemIcon>
-                        <ListItemText
-                          primary={task.text}
+                        <ListItem
+                          disableGutters
                           sx={{
-                            textDecoration: task.completed ? "line-through" : "none",
-                            mr: 5,
+                            alignItems: "flex-start",
+                            gap: 1,
+                            my: 1.2,
+                            pr: 0,
                           }}
-                        />
-                      </ListItem>
-                      {index < tasks.length - 1 && <Divider />}
-                    </motion.div>
-                  ))}
-                </AnimatePresence>
-              </List>
+                        >
+                          <ListItemIcon sx={{ minWidth: 40, pt: 0.25 }}>
+                            <Checkbox
+                              edge="start"
+                              checked={task.completed}
+                              tabIndex={-1}
+                              disableRipple
+                              onChange={() => handleToggleTask(task.id)}
+                              disabled={folderId === "all" || isSyncingNotion}
+                            />
+                          </ListItemIcon>
+                          <ListItemText
+                            primary={task.text}
+                            sx={{
+                              minWidth: 0,
+                              textDecoration: task.completed ? "line-through" : "none",
+                              my: 0.25,
+                            }}
+                            primaryTypographyProps={{
+                              sx: {
+                                overflowWrap: "anywhere",
+                              },
+                            }}
+                          />
+                          <Stack direction="row" spacing={0.5} sx={{ flexShrink: 0 }}>
+                            <IconButton
+                              aria-label="copy"
+                              onClick={() => void handleCopyTask(task.text)}
+                              disabled={folderId === "all" || isSyncingNotion}
+                              size="small"
+                            >
+                              <ContentCopyIcon fontSize="small" />
+                            </IconButton>
+                            <IconButton
+                              aria-label="delete"
+                              onClick={() => handleDeleteTask(task.id)}
+                              disabled={folderId === "all" || isSyncingNotion}
+                              size="small"
+                            >
+                              <DeleteIcon fontSize="small" />
+                            </IconButton>
+                          </Stack>
+                        </ListItem>
+                        {index < visibleTasks.length - 1 && <Divider />}
+                      </motion.div>
+                    ))}
+                  </AnimatePresence>
+                </List>
+              )}
             </>
           )}
         </DialogContent>
