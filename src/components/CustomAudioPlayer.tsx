@@ -304,7 +304,7 @@ export const CustomAudioPlayer: React.FC<CustomAudioPlayerProps> = ({
         initial={{ opacity: 0 }}
         animate={{
           opacity: 1,
-          height: isExpanded ? "100vh" : "auto",
+          height: isExpanded ? "100dvh" : "auto",
           top: isExpanded ? 0 : "auto",
           boxShadow: isLoading
             ? [
@@ -334,7 +334,9 @@ export const CustomAudioPlayer: React.FC<CustomAudioPlayerProps> = ({
           borderImage: "linear-gradient(90deg, #ff006e, #00f5d4, #fbf8cc) 1",
           pt: isExpanded ? "calc(env(safe-area-inset-top) + 16px)" : 3,
           px: { xs: 1.5, sm: 3 },
-          pb: "calc(24px + env(safe-area-inset-bottom))",
+          pb: isExpanded
+            ? "calc(16px + env(safe-area-inset-bottom))"
+            : "calc(10px + env(safe-area-inset-bottom))",
           zIndex: 1100,
           overflow: isExpanded ? "auto" : "visible",
           display: "flex",
