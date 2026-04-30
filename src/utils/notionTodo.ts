@@ -8,7 +8,22 @@ interface NotionTodoResponse {
   error?: string;
 }
 
-const notionSyncPageId = import.meta.env.VITE_NOTION_SYNC_PAGE_ID?.trim() ?? "";
+const rawNotionSyncPageId = import.meta.env.VITE_NOTION_SYNC_PAGE_ID?.trim() ?? "";
+
+export const normalizeNotionPageId = (value: string) => {
+  const trimmedValue = value.trim();
+  const compactId = trimmedValue.match(/[0-9a-fA-F]{32}/)?.[0];
+  if (compactId) {
+    return compactId;
+  }
+
+  const uuid = trimmedValue.match(
+    /[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/,
+  )?.[0];
+  return uuid ? uuid.replace(/-/g, "") : trimmedValue;
+};
+
+const notionSyncPageId = normalizeNotionPageId(rawNotionSyncPageId);
 
 const getSectionPrefix = () => {
   return import.meta.env.VITE_NOTION_SYNC_SECTION_PREFIX?.trim() || NOTION_SYNC_SECTION_PREFIX;
