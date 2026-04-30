@@ -85,6 +85,21 @@ interface CreateNotionTodoResponseParams {
 
 const jsonResponse = <T>(status: number, body: T): JsonResponse<T> => ({ status, body });
 
+const normalizeNotionPageId = (value: string) => {
+  const trimmedValue = value.trim();
+  const compactId = trimmedValue.match(/[0-9a-fA-F]{32}/)?.[0];
+  if (compactId) {
+    return compactId;
+  }
+
+  const uuid = trimmedValue.match(
+    /[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/,
+  )?.[0];
+  return uuid ? uuid.replace(/-/g, "") : trimmedValue;
+};
+
+const isNotionPageId = (value: string) => /^[0-9a-fA-F]{32}$/.test(value);
+
 const getPlainText = (richText: NotionRichTextItem[] = []) => {
   return richText
     .map((item) => item.plain_text ?? "")
@@ -424,7 +439,9 @@ export const createNotionTodoResponse = async ({
     return jsonResponse(500, { error: "NOTION_API_KEY is not configured" });
   }
 
-  const pageId = (method === "GET" ? searchParams.get("pageId") : body?.pageId)?.trim();
+  const pageId = normalizeNotionPageId(
+    (method === "GET" ? searchParams.get("pageId") : body?.pageId)?.trim() ?? "",
+  );
   const sectionTitle = (
     method === "GET" ? searchParams.get("sectionTitle") : body?.sectionTitle
   )?.trim();
@@ -432,6 +449,12 @@ export const createNotionTodoResponse = async ({
 
   if (!pageId || !sectionTitle) {
     return jsonResponse(400, { error: "pageId and sectionTitle are required" });
+  }
+
+  if (!isNotionPageId(pageId)) {
+    return jsonResponse(400, {
+      error: "pageId must be a Notion page ID or a Notion page URL",
+    });
   }
 
   try {
