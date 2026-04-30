@@ -1,4 +1,4 @@
-import { createNotionTodoResponse } from "./handler";
+import { createNotionTodoResponse } from "./handler.js";
 
 interface VercelRequestLike {
   url?: string;

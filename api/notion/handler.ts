@@ -1,6 +1,10 @@
 const NOTION_API_BASE_URL = "https://api.notion.com/v1";
 const NOTION_VERSION = "2022-06-28";
 
+declare const process: {
+  env: Record<string, string | undefined>;
+};
+
 interface JsonResponse<T> {
   status: number;
   body: T;
