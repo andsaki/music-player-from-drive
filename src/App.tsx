@@ -494,7 +494,12 @@ function App() {
     <Box sx={{ display: "flex", flexDirection: "column", height: "100dvh" }}>
       <CssBaseline />
       {/* アプリケーションのヘッダー部分 */}
-      <AppBar position="static">
+      <AppBar
+        position="static"
+        sx={{
+          mb: accessToken ? 0 : { xs: 1.5, sm: 0 },
+        }}
+      >
         <Toolbar sx={{ gap: 2, mt: 0, mb: 0, pt: "env(safe-area-inset-top)" }}>
           <MusicNoteIcon sx={{ mr: 2 }} />
           <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
