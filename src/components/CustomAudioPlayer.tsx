@@ -17,7 +17,7 @@ import Replay10Icon from "@mui/icons-material/Replay10";
 import Replay30Icon from "@mui/icons-material/Replay30";
 import Forward10Icon from "@mui/icons-material/Forward10";
 import Forward30Icon from "@mui/icons-material/Forward30";
-import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
+import { motion, useMotionValue, useReducedMotion, useSpring, useTransform } from "framer-motion";
 import { NowPlayingFirefly } from "./NowPlayingFirefly";
 
 const DRAG_VISUAL_LIMIT = 140;
@@ -82,6 +82,100 @@ const LiveWaveform: React.FC<{ compact?: boolean; loading?: boolean }> = ({
     ))}
   </Box>
 );
+
+const titleTextSx = {
+  background: "linear-gradient(90deg, #ff006e, #00f5d4)",
+  backgroundClip: "text",
+  WebkitBackgroundClip: "text",
+  WebkitTextFillColor: "transparent",
+  fontFamily: "Orbitron, sans-serif",
+  fontWeight: 700,
+  whiteSpace: "nowrap",
+};
+
+const PlayerTitle: React.FC<{
+  name: string;
+  active: boolean;
+  loading: boolean;
+  expanded?: boolean;
+}> = ({ name, active, loading, expanded = false }) => {
+  const shouldReduceMotion = useReducedMotion();
+  const shouldMarquee = active && !shouldReduceMotion;
+  const variant = expanded ? "h4" : "h6";
+
+  return (
+    <Box
+      component={motion.div}
+      animate={
+        loading
+          ? {
+              opacity: [0.5, 1, 0.5],
+            }
+          : { opacity: 1 }
+      }
+      transition={{
+        duration: 1.5,
+        repeat: loading ? Infinity : 0,
+        ease: "easeInOut",
+      }}
+      sx={{
+        width: "100%",
+        maxWidth: expanded ? { xs: "92vw", sm: 680 } : { xs: "min(68vw, 420px)", sm: 520 },
+        overflow: "hidden",
+        filter: loading ? "blur(1px)" : "blur(0)",
+        transition: "filter 0.3s ease",
+        minWidth: 0,
+      }}
+      aria-label={name}
+    >
+      {shouldMarquee ? (
+        <Box
+          component={motion.div}
+          aria-hidden
+          animate={{ x: ["0%", "-50%"] }}
+          transition={{
+            duration: expanded ? 24 : 18,
+            repeat: Infinity,
+            ease: "linear",
+          }}
+          sx={{
+            display: "inline-flex",
+            alignItems: "center",
+            minWidth: "max-content",
+          }}
+        >
+          {[0, 1].map((copyIndex) => (
+            <Typography
+              key={copyIndex}
+              variant={variant}
+              component="span"
+              sx={{
+                ...titleTextSx,
+                px: expanded ? 3 : 2,
+              }}
+            >
+              {name}
+            </Typography>
+          ))}
+        </Box>
+      ) : (
+        <Typography
+          variant={variant}
+          component="div"
+          sx={{
+            ...titleTextSx,
+            px: expanded ? 2 : 0,
+            textAlign: "center",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+          }}
+        >
+          {name}
+        </Typography>
+      )}
+    </Box>
+  );
+};
 
 interface CustomAudioPlayerProps {
   audioRef: React.RefObject<HTMLAudioElement | null>;
@@ -410,37 +504,14 @@ export const CustomAudioPlayer: React.FC<CustomAudioPlayerProps> = ({
                 <VolumeUpIcon sx={{ fontSize: { xs: 120, sm: 150 }, color: "#fff" }} />
               </Box>
             )}
-            <Typography
-              variant="h4"
-              component={motion.div}
-              animate={
-                isLoading
-                  ? {
-                      opacity: [0.5, 1, 0.5],
-                    }
-                  : { opacity: 1 }
-              }
-              transition={{
-                duration: 1.5,
-                repeat: isLoading ? Infinity : 0,
-                ease: "easeInOut",
-              }}
-              sx={{
-                mb: 1,
-                textAlign: "center",
-                background: "linear-gradient(90deg, #ff006e, #00f5d4)",
-                backgroundClip: "text",
-                WebkitBackgroundClip: "text",
-                WebkitTextFillColor: "transparent",
-                fontFamily: "Orbitron, sans-serif",
-                fontWeight: 700,
-                px: 2,
-                filter: isLoading ? "blur(1px)" : "blur(0)",
-                transition: "filter 0.3s ease",
-              }}
-            >
-              {selectedFile.name}
-            </Typography>
+            <Box sx={{ width: "100%", display: "flex", justifyContent: "center", mb: 1 }}>
+              <PlayerTitle
+                name={selectedFile.name}
+                active={isPlaying || isLoading}
+                loading={isLoading}
+                expanded
+              />
+            </Box>
             {(isPlaying || isLoading) && <LiveWaveform loading={isLoading} />}
           </Box>
         )}
@@ -458,38 +529,11 @@ export const CustomAudioPlayer: React.FC<CustomAudioPlayerProps> = ({
             }}
           >
             {(isPlaying || isLoading) && <NowPlayingFirefly loading={isLoading} />}
-            <Typography
-              variant="h6"
-              component={motion.div}
-              animate={
-                isLoading
-                  ? {
-                      opacity: [0.5, 1, 0.5],
-                    }
-                  : { opacity: 1 }
-              }
-              transition={{
-                duration: 1.5,
-                repeat: isLoading ? Infinity : 0,
-                ease: "easeInOut",
-              }}
-              sx={{
-                textAlign: "center",
-                background: "linear-gradient(90deg, #ff006e, #00f5d4)",
-                backgroundClip: "text",
-                WebkitBackgroundClip: "text",
-                WebkitTextFillColor: "transparent",
-                fontFamily: "Orbitron, sans-serif",
-                fontWeight: 700,
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
-                filter: isLoading ? "blur(1px)" : "blur(0)",
-                transition: "filter 0.3s ease",
-              }}
-            >
-              {selectedFile.name}
-            </Typography>
+            <PlayerTitle
+              name={selectedFile.name}
+              active={isPlaying || isLoading}
+              loading={isLoading}
+            />
           </Box>
         )}
 
