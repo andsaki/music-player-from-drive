@@ -339,6 +339,19 @@ export const CustomAudioPlayer: React.FC<CustomAudioPlayerProps> = ({
     dragOffset.set(0);
   };
 
+  const cancelDrag = () => {
+    if (!isDragging) return;
+    setIsDragging(false);
+    dragVelocityRef.current = 0;
+    dragOffset.set(0);
+  };
+
+  useEffect(() => {
+    setIsDragging(false);
+    dragVelocityRef.current = 0;
+    dragOffset.set(0);
+  }, [dragOffset, selectedFile?.id]);
+
   const handleTouchStart = (e: React.TouchEvent) => {
     if (shouldIgnoreDragTarget(e.target)) return;
     beginDrag(e.touches[0].clientY);
@@ -392,9 +405,12 @@ export const CustomAudioPlayer: React.FC<CustomAudioPlayerProps> = ({
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
+        onTouchCancel={cancelDrag}
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
+        onPointerCancel={cancelDrag}
+        onLostPointerCapture={cancelDrag}
         initial={{ opacity: 0 }}
         animate={{
           opacity: 1,
@@ -774,6 +790,7 @@ export const CustomAudioPlayer: React.FC<CustomAudioPlayerProps> = ({
       <Box
         component={motion.div}
         aria-hidden
+        data-testid="player-gap-overlay"
         sx={{
           position: "fixed",
           left: 0,
@@ -783,7 +800,7 @@ export const CustomAudioPlayer: React.FC<CustomAudioPlayerProps> = ({
           pointerEvents: "none",
           zIndex: 1000,
         }}
-        style={{ height: gapOverlayHeight }}
+        style={{ height: isDragging ? gapOverlayHeight : 0 }}
       />
     </>
   );

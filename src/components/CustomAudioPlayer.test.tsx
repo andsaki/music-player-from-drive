@@ -38,4 +38,21 @@ describe("CustomAudioPlayer", () => {
       expect(screen.getAllByText(track.name)).toHaveLength(2);
     });
   });
+
+  it("ドラッグがキャンセルされたら下部ギャップを閉じる", () => {
+    render(<PlayerHarness />);
+
+    const dragHandle = document.querySelector('[data-player-handle="true"]');
+    expect(dragHandle).toBeInTheDocument();
+
+    fireEvent.touchStart(dragHandle as HTMLElement, {
+      touches: [{ clientY: 700 }],
+    });
+    fireEvent.touchMove(dragHandle as HTMLElement, {
+      touches: [{ clientY: 580 }],
+    });
+    fireEvent.touchCancel(dragHandle as HTMLElement);
+
+    expect(screen.getByTestId("player-gap-overlay")).toHaveStyle({ height: "0px" });
+  });
 });
