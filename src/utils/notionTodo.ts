@@ -39,14 +39,6 @@ const parseResponse = async (response: Response) => {
   return data;
 };
 
-const buildNotionApiUrl = (path: string) => {
-  if (typeof window === "undefined") {
-    return path;
-  }
-
-  return new URL(path, window.location.origin).toString();
-};
-
 export const isNotionSyncConfigured = () => notionSyncPageId !== "";
 
 export const buildNotionSyncSectionTitle = (_folderName: string) => {
@@ -66,7 +58,7 @@ export const loadTasksFromNotion = async (folderName: string) => {
 
   let response: Response;
   try {
-    response = await fetch(buildNotionApiUrl(`/api/notion/todo?${params.toString()}`));
+    response = await fetch(`/api/notion/todo?${params.toString()}`);
   } catch (error) {
     throw new Error(
       error instanceof Error
@@ -89,7 +81,7 @@ export const saveTasksToNotion = async (folderName: string, tasks: Task[]) => {
 
   let response: Response;
   try {
-    response = await fetch(buildNotionApiUrl("/api/notion/todo"), {
+    response = await fetch("/api/notion/todo", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
