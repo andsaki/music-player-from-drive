@@ -17,6 +17,7 @@
 - `touchcancel` / `pointercancel` / `lostpointercapture` でドラッグ状態と motion value をリセットする処理を追加。
 - 曲切り替え時にもドラッグ状態を初期化する。
 - `gapOverlay` の高さはドラッグ中だけ反映し、ドラッグ中でなければ 0 にする。
+- 追加修正: 展開時の `height: 100dvh` / `bottom: auto` をやめ、プレイヤーを `top: 0` / `bottom: 0` で固定する。iOS PWA の viewport 高計算差で下側にフッター状の余白が出る問題を避ける。
 
 ## 検証
 - `npm test -- CustomAudioPlayer.test.tsx`: 成功
@@ -24,6 +25,11 @@
 - `npm run lint`: 成功（既存の `coverage/` 配下 warning のみ）
 - `npm test`: 成功
 - `npm run build`: 成功
+- 追加修正後:
+  - `npm test -- CustomAudioPlayer.test.tsx`: 成功
+  - `npm run lint`: 成功（既存の `coverage/` 配下 warning のみ）
+  - `npm test`: 成功
+  - `npm run build`: 成功
 - Chrome headless screenshot:
   - `temp/002_issue-71-bottom-spacing/screenshots/desktop.png`
   - `temp/002_issue-71-bottom-spacing/screenshots/mobile.png`

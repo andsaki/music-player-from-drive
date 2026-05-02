@@ -401,6 +401,7 @@ export const CustomAudioPlayer: React.FC<CustomAudioPlayerProps> = ({
     <>
       <Box
         component={motion.div}
+        data-testid="custom-audio-player"
         style={{ y: animatedDragOffset }}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
@@ -414,7 +415,6 @@ export const CustomAudioPlayer: React.FC<CustomAudioPlayerProps> = ({
         initial={{ opacity: 0 }}
         animate={{
           opacity: 1,
-          height: isExpanded ? "100dvh" : "auto",
           top: isExpanded ? 0 : "auto",
           boxShadow: isLoading
             ? [
@@ -425,7 +425,6 @@ export const CustomAudioPlayer: React.FC<CustomAudioPlayerProps> = ({
             : "0 -4px 30px rgba(255, 0, 110, 0.4)",
         }}
         transition={{
-          height: { duration: 0.3, ease: "easeInOut" },
           top: { duration: 0.3, ease: "easeInOut" },
           boxShadow: {
             duration: 1.5,
@@ -435,7 +434,7 @@ export const CustomAudioPlayer: React.FC<CustomAudioPlayerProps> = ({
         }}
         sx={{
           position: "fixed",
-          bottom: isExpanded ? "auto" : 0,
+          bottom: 0,
           left: 0,
           right: 0,
           background: "linear-gradient(180deg, rgba(26,0,51,0.95) 0%, rgba(61,0,102,0.98) 100%)",

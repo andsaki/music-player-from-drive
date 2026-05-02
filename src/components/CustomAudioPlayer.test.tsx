@@ -55,4 +55,15 @@ describe("CustomAudioPlayer", () => {
 
     expect(screen.getByTestId("player-gap-overlay")).toHaveStyle({ height: "0px" });
   });
+
+  it("展開時もプレイヤーを画面下端に固定する", () => {
+    render(<PlayerHarness />);
+
+    const dragHandle = document.querySelector('[data-player-handle="true"]');
+    expect(dragHandle).toBeInTheDocument();
+
+    fireEvent.click(dragHandle as HTMLElement);
+
+    expect(screen.getByTestId("custom-audio-player")).toHaveStyle({ bottom: "0px" });
+  });
 });
