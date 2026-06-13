@@ -50,6 +50,56 @@ const isAuthorizationError = (error: unknown) => {
 };
 
 const getMemoStorageKey = (folderId: string) => `${LOCAL_STORAGE_KEYS.USER_MEMO_PREFIX}${folderId}`;
+const getMemoHistoryStorageKey = (folderId: string) =>
+  `${LOCAL_STORAGE_KEYS.USER_MEMO_HISTORY_PREFIX}${folderId}`;
+const MAX_MEMO_HISTORY_ENTRIES = 10;
+
+interface MemoHistoryEntry {
+  savedAt: number;
+  tasks: Task[];
+}
+
+const getTaskSignature = (tasks: Task[]) => {
+  return JSON.stringify(
+    sortTasks(tasks).map((task) => ({
+      text: task.text,
+      completed: task.completed,
+    })),
+  );
+};
+
+const areTaskListsEquivalent = (firstTasks: Task[], secondTasks: Task[]) => {
+  return getTaskSignature(firstTasks) === getTaskSignature(secondTasks);
+};
+
+const parseStoredTasks = (value: string | null) => {
+  if (!value) {
+    return [];
+  }
+
+  try {
+    return sortTasks(JSON.parse(value) as Task[]);
+  } catch (error) {
+    console.error("Failed to parse tasks from localStorage", error);
+    return [];
+  }
+};
+
+const parseMemoHistory = (value: string | null) => {
+  if (!value) {
+    return [];
+  }
+
+  try {
+    const parsedHistory = JSON.parse(value) as MemoHistoryEntry[];
+    return parsedHistory
+      .filter((entry) => Array.isArray(entry.tasks) && typeof entry.savedAt === "number")
+      .slice(0, MAX_MEMO_HISTORY_ENTRIES);
+  } catch (error) {
+    console.error("Failed to parse memo history from localStorage", error);
+    return [];
+  }
+};
 
 const memoSnackbarSx = {
   top: {
@@ -126,6 +176,8 @@ const MemoModal: React.FC<MemoModalProps> = ({
   const [isSavingTodo, setIsSavingTodo] = useState(false);
   const [isSyncingNotion, setIsSyncingNotion] = useState(false);
   const [isNotionLoadConfirmOpen, setIsNotionLoadConfirmOpen] = useState(false);
+  const [isMemoHistoryOpen, setIsMemoHistoryOpen] = useState(false);
+  const [memoHistory, setMemoHistory] = useState<MemoHistoryEntry[]>([]);
   const [notionLoadBackupMeta, setNotionLoadBackupMeta] = useState<{
     savedAt: number;
     tasks: Task[];
@@ -164,7 +216,24 @@ const MemoModal: React.FC<MemoModalProps> = ({
         return;
       }
 
-      localStorage.setItem(getMemoStorageKey(folderId), JSON.stringify(currentTasks));
+      const memoStorageKey = getMemoStorageKey(folderId);
+      const historyStorageKey = getMemoHistoryStorageKey(folderId);
+      const previousTasks = parseStoredTasks(localStorage.getItem(memoStorageKey));
+
+      if (previousTasks.length > 0 && !areTaskListsEquivalent(previousTasks, currentTasks)) {
+        const currentHistory = parseMemoHistory(localStorage.getItem(historyStorageKey));
+        const nextEntry = { savedAt: Date.now(), tasks: previousTasks };
+        const nextHistory =
+          currentHistory.length > 0 &&
+          areTaskListsEquivalent(currentHistory[0].tasks, previousTasks)
+            ? currentHistory
+            : [nextEntry, ...currentHistory].slice(0, MAX_MEMO_HISTORY_ENTRIES);
+
+        localStorage.setItem(historyStorageKey, JSON.stringify(nextHistory));
+        setMemoHistory(nextHistory);
+      }
+
+      localStorage.setItem(memoStorageKey, JSON.stringify(currentTasks));
     },
     [folderId],
   );
@@ -226,17 +295,7 @@ const MemoModal: React.FC<MemoModalProps> = ({
       return [];
     }
 
-    const savedTasks = localStorage.getItem(getMemoStorageKey(folderId));
-    if (!savedTasks) {
-      return [];
-    }
-
-    try {
-      return sortTasks(JSON.parse(savedTasks) as Task[]);
-    } catch (error) {
-      console.error("Failed to parse tasks from localStorage", error);
-      return [];
-    }
+    return parseStoredTasks(localStorage.getItem(getMemoStorageKey(folderId)));
   }, [folderId]);
 
   const applyTasksUpdate = useCallback(
@@ -283,9 +342,11 @@ const MemoModal: React.FC<MemoModalProps> = ({
       setTasks([]);
       setTodoFileId(null);
       setNotionLoadBackupMeta(null);
+      setMemoHistory([]);
       return;
     }
 
+    setMemoHistory(parseMemoHistory(localStorage.getItem(getMemoHistoryStorageKey(folderId))));
     setNotionLoadBackupMeta(loadNotionBackup());
 
     if (!accessToken) {
@@ -496,12 +557,13 @@ const MemoModal: React.FC<MemoModalProps> = ({
     try {
       cacheNotionBackup(tasks);
       const result = await loadTasksFromNotion(folderName);
+      if (!result.found) {
+        setFeedbackMessage("Notion 側に App TODO がまだ無いため、現在の TODO をそのまま残しました。");
+        return;
+      }
+
       applyTasksUpdate(result.tasks, { publish: true });
-      setFeedbackMessage(
-        result.found
-          ? "Notion の曲ページ内 App TODO から読み込みました。"
-          : "Notion 側に App TODO がまだ無いため、空の TODO を表示しています。",
-      );
+      setFeedbackMessage("Notion の曲ページ内 App TODO から読み込みました。");
     } catch (error) {
       console.error("Failed to load TODO from Notion", error);
       setErrorMessage(
@@ -522,6 +584,13 @@ const MemoModal: React.FC<MemoModalProps> = ({
     applyTasksUpdate(notionLoadBackupMeta.tasks, { publish: true });
     clearNotionBackup();
     setFeedbackMessage("Notion 読込前の TODO を復元しました。");
+    setErrorMessage(null);
+  };
+
+  const handleRestoreMemoHistory = (entry: MemoHistoryEntry) => {
+    applyTasksUpdate(entry.tasks, { publish: true });
+    setIsMemoHistoryOpen(false);
+    setFeedbackMessage("TODO 履歴から復元しました。必要なら Drive に保存してください。");
     setErrorMessage(null);
   };
 
@@ -594,6 +663,18 @@ const MemoModal: React.FC<MemoModalProps> = ({
                 }
               >
                 直前の Notion 読込前の TODO が残っています。
+              </Alert>
+            )}
+            {memoHistory.length > 0 && (
+              <Alert
+                severity="info"
+                action={
+                  <Button color="inherit" size="small" onClick={() => setIsMemoHistoryOpen(true)}>
+                    履歴
+                  </Button>
+                }
+              >
+                TODO の自動履歴が {memoHistory.length} 件残っています。
               </Alert>
             )}
             <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
@@ -835,6 +916,57 @@ const MemoModal: React.FC<MemoModalProps> = ({
           >
             {isSavingTodo ? "Driveに保存中..." : "Driveに保存"}
           </Button>
+        </DialogActions>
+      </Dialog>
+      <Dialog
+        open={isMemoHistoryOpen}
+        onClose={() => setIsMemoHistoryOpen(false)}
+        fullWidth
+        maxWidth="sm"
+      >
+        <DialogTitle>TODO 履歴</DialogTitle>
+        <DialogContent>
+          {memoHistory.length === 0 ? (
+            <Alert severity="info">復元できる TODO 履歴がありません。</Alert>
+          ) : (
+            <List>
+              {memoHistory.map((entry, index) => (
+                <React.Fragment key={`${entry.savedAt}-${index}`}>
+                  <ListItem
+                    disableGutters
+                    sx={{ alignItems: "flex-start", gap: 1.5 }}
+                    secondaryAction={
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        onClick={() => handleRestoreMemoHistory(entry)}
+                      >
+                        復元
+                      </Button>
+                    }
+                  >
+                    <ListItemText
+                      primary={`${new Date(entry.savedAt).toLocaleString()} / ${entry.tasks.length} 件`}
+                      secondary={entry.tasks
+                        .slice(0, 3)
+                        .map((task) => task.text)
+                        .join(" / ")}
+                      sx={{ mr: 8 }}
+                      secondaryTypographyProps={{
+                        sx: {
+                          overflowWrap: "anywhere",
+                        },
+                      }}
+                    />
+                  </ListItem>
+                  {index < memoHistory.length - 1 && <Divider />}
+                </React.Fragment>
+              ))}
+            </List>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setIsMemoHistoryOpen(false)}>閉じる</Button>
         </DialogActions>
       </Dialog>
       <Dialog

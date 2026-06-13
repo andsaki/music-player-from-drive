@@ -9,5 +9,6 @@ export const LOCAL_STORAGE_KEYS = {
   TOKEN_EXPIRY: "tokenExpiry", // トークンの有効期限を保存
   TOKEN_SCOPE_VERSION: "tokenScopeVersion",
   USER_MEMO_PREFIX: "userMemo_",
+  USER_MEMO_HISTORY_PREFIX: "userMemoHistory_",
   USER_MEMO_NOTION_BACKUP_PREFIX: "userMemoNotionBackup_",
 };
