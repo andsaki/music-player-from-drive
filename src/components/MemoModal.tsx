@@ -59,6 +59,8 @@ interface MemoHistoryEntry {
   tasks: Task[];
 }
 
+type DriveTodoStatus = "idle" | "loaded" | "missing" | "auth-required" | "error";
+
 const getTaskSignature = (tasks: Task[]) => {
   return JSON.stringify(
     sortTasks(tasks).map((task) => ({
@@ -178,6 +180,8 @@ const MemoModal: React.FC<MemoModalProps> = ({
   const [isNotionLoadConfirmOpen, setIsNotionLoadConfirmOpen] = useState(false);
   const [isMemoHistoryOpen, setIsMemoHistoryOpen] = useState(false);
   const [memoHistory, setMemoHistory] = useState<MemoHistoryEntry[]>([]);
+  const [driveTodoStatus, setDriveTodoStatus] = useState<DriveTodoStatus>("idle");
+  const [lastSavedTaskSignature, setLastSavedTaskSignature] = useState<string | null>(null);
   const [notionLoadBackupMeta, setNotionLoadBackupMeta] = useState<{
     savedAt: number;
     tasks: Task[];
@@ -193,6 +197,41 @@ const MemoModal: React.FC<MemoModalProps> = ({
       all: tasks.length,
     };
   }, [tasks]);
+
+  const currentTaskSignature = useMemo(() => getTaskSignature(tasks), [tasks]);
+  const hasUnsavedChanges =
+    folderId !== "all" &&
+    (lastSavedTaskSignature
+      ? currentTaskSignature !== lastSavedTaskSignature
+      : tasks.length > 0);
+  const driveStatusText = (() => {
+    if (folderId === "all") {
+      return "フォルダ未選択";
+    }
+
+    if (driveTodoStatus === "loaded") {
+      return todoFileId ? "Drive TODO.md 読込済み" : "Drive TODO.md 作成済み";
+    }
+
+    if (driveTodoStatus === "missing") {
+      return "Drive TODO.md 未作成";
+    }
+
+    if (driveTodoStatus === "auth-required") {
+      return "Drive未接続";
+    }
+
+    if (driveTodoStatus === "error") {
+      return "Drive読込エラー";
+    }
+
+    return "Drive状態確認中";
+  })();
+  const saveStatusText = hasUnsavedChanges
+    ? "未保存変更あり"
+    : driveTodoStatus === "loaded"
+      ? "Drive保存済み"
+      : "端末変更なし";
 
   const visibleTasks = useMemo(() => {
     const query = taskSearch.trim().toLowerCase();
@@ -343,6 +382,8 @@ const MemoModal: React.FC<MemoModalProps> = ({
       setTodoFileId(null);
       setNotionLoadBackupMeta(null);
       setMemoHistory([]);
+      setDriveTodoStatus("idle");
+      setLastSavedTaskSignature(null);
       return;
     }
 
@@ -350,8 +391,11 @@ const MemoModal: React.FC<MemoModalProps> = ({
     setNotionLoadBackupMeta(loadNotionBackup());
 
     if (!accessToken) {
-      applyTasksUpdate(loadTasksFromLocalCache());
+      const cachedTasks = loadTasksFromLocalCache();
+      applyTasksUpdate(cachedTasks);
       setTodoFileId(null);
+      setDriveTodoStatus("auth-required");
+      setLastSavedTaskSignature(null);
       setErrorMessage(
         notionSyncEnabled
           ? "Drive と同期するには再ログインが必要です。Notion 同期は引き続き使えます。"
@@ -369,6 +413,8 @@ const MemoModal: React.FC<MemoModalProps> = ({
           const cachedTasks = loadTasksFromLocalCache();
           applyTasksUpdate(cachedTasks);
           setTodoFileId(null);
+          setDriveTodoStatus("missing");
+          setLastSavedTaskSignature(null);
           setFeedbackMessage(
             cachedTasks.length > 0
               ? `このフォルダには ${TODO_FILE_NAME} がまだありません。端末内の下書きを表示しています。保存すると新規作成します。`
@@ -382,18 +428,24 @@ const MemoModal: React.FC<MemoModalProps> = ({
 
         applyTasksUpdate(loadedTasks);
         setTodoFileId(todoFile.id);
+        setDriveTodoStatus("loaded");
+        setLastSavedTaskSignature(getTaskSignature(loadedTasks));
         setFeedbackMessage(`${TODO_FILE_NAME} を Drive から読み込みました。`);
       } catch (error) {
         console.error("Failed to load TODO from Drive", error);
 
         if (isAuthorizationError(error)) {
           onAuthError();
+          setDriveTodoStatus("auth-required");
+          setLastSavedTaskSignature(null);
           setErrorMessage("Drive の認証が切れました。再ログインしてください。");
           return;
         }
 
         const cachedTasks = loadTasksFromLocalCache();
         applyTasksUpdate(cachedTasks);
+        setDriveTodoStatus("error");
+        setLastSavedTaskSignature(null);
         setErrorMessage("Drive から TODO を読み込めなかったため、端末内の下書きを表示しています。");
       } finally {
         setIsLoadingTodo(false);
@@ -466,6 +518,8 @@ const MemoModal: React.FC<MemoModalProps> = ({
         const cachedTasks = loadTasksFromLocalCache();
         applyTasksUpdate(cachedTasks, { publish: true });
         setTodoFileId(null);
+        setDriveTodoStatus("missing");
+        setLastSavedTaskSignature(null);
         setFeedbackMessage(
           cachedTasks.length > 0
             ? `このフォルダには ${TODO_FILE_NAME} がありません。端末内の下書きを表示しています。`
@@ -479,15 +533,20 @@ const MemoModal: React.FC<MemoModalProps> = ({
 
       applyTasksUpdate(loadedTasks, { publish: true });
       setTodoFileId(todoFile.id);
+      setDriveTodoStatus("loaded");
+      setLastSavedTaskSignature(getTaskSignature(loadedTasks));
       setFeedbackMessage(`${TODO_FILE_NAME} を再読み込みしました。`);
     } catch (error) {
       console.error("Failed to reload TODO from Drive", error);
       if (isAuthorizationError(error)) {
         onAuthError();
+        setDriveTodoStatus("auth-required");
+        setLastSavedTaskSignature(null);
         setErrorMessage("Drive の認証が切れました。再ログインしてください。");
         return;
       }
 
+      setDriveTodoStatus("error");
       setErrorMessage("Drive から TODO を再読み込みできませんでした。");
     } finally {
       setIsLoadingTodo(false);
@@ -520,6 +579,8 @@ const MemoModal: React.FC<MemoModalProps> = ({
       }
 
       cacheTasksLocally(tasks);
+      setDriveTodoStatus("loaded");
+      setLastSavedTaskSignature(getTaskSignature(tasks));
       setFeedbackMessage(`Drive の ${TODO_FILE_NAME} を保存しました。`);
       onClose();
     } catch (error) {
@@ -527,6 +588,7 @@ const MemoModal: React.FC<MemoModalProps> = ({
 
       if (isAuthorizationError(error)) {
         onAuthError();
+        setDriveTodoStatus("auth-required");
         setErrorMessage("Drive の認証が切れました。再ログインしてください。");
         return;
       }
@@ -653,6 +715,12 @@ const MemoModal: React.FC<MemoModalProps> = ({
                 を設定し、対象ページを Notion integration に共有してください。
               </Alert>
             )}
+            {folderId !== "all" && (
+              <Alert severity={hasUnsavedChanges ? "warning" : "success"}>
+                保存状態: {saveStatusText} / {driveStatusText} / 端末履歴 {memoHistory.length}件
+                {notionLoadBackupMeta ? " / Notion読込前バックアップあり" : ""}
+              </Alert>
+            )}
             {notionSyncEnabled && notionLoadBackupMeta && (
               <Alert
                 severity="warning"
@@ -663,18 +731,6 @@ const MemoModal: React.FC<MemoModalProps> = ({
                 }
               >
                 直前の Notion 読込前の TODO が残っています。
-              </Alert>
-            )}
-            {memoHistory.length > 0 && (
-              <Alert
-                severity="info"
-                action={
-                  <Button color="inherit" size="small" onClick={() => setIsMemoHistoryOpen(true)}>
-                    履歴
-                  </Button>
-                }
-              >
-                TODO の自動履歴が {memoHistory.length} 件残っています。
               </Alert>
             )}
             <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
@@ -690,6 +746,13 @@ const MemoModal: React.FC<MemoModalProps> = ({
                 }
               >
                 Driveから再読込
+              </Button>
+              <Button
+                onClick={() => setIsMemoHistoryOpen(true)}
+                variant="outlined"
+                disabled={folderId === "all" || isLoadingTodo || isSavingTodo || isSyncingNotion}
+              >
+                履歴
               </Button>
               <Button
                 onClick={handleLoadFromNotion}
