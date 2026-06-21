@@ -22,10 +22,11 @@ vi.mock("../utils/notionTodo", () => ({
   saveTasksToNotion: notionMocks.saveTasksToNotion,
 }));
 
-import { findTodoFileInFolder } from "../utils/driveTodo";
+import { findTodoFileInFolder, readTodoFile } from "../utils/driveTodo";
 import { loadTasksFromNotion } from "../utils/notionTodo";
 
 const mockedFindTodoFileInFolder = vi.mocked(findTodoFileInFolder);
+const mockedReadTodoFile = vi.mocked(readTodoFile);
 const mockedLoadTasksFromNotion = vi.mocked(loadTasksFromNotion);
 
 const defaultProps = {
@@ -60,6 +61,30 @@ describe("MemoModal", () => {
     expect(
       screen.getByText("このフォルダには TODO.md がまだありません。端末内の下書きを表示しています。保存すると新規作成します。"),
     ).toBeInTheDocument();
+    expect(screen.getByText(/保存状態: 未保存変更あり \/ Drive TODO\.md 未作成 \/ 端末履歴 0件/)).toBeInTheDocument();
+  });
+
+  it("Drive 読込済み TODO を編集すると未保存変更を表示する", async () => {
+    mockedFindTodoFileInFolder.mockResolvedValue({
+      id: "todo-file-1",
+      name: "TODO.md",
+    });
+    mockedReadTodoFile.mockResolvedValue("# 制作TODO: Test Folder\n\n- [ ] Driveタスク");
+
+    render(<MemoModal {...defaultProps} />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Driveタスク")).toBeInTheDocument();
+    });
+
+    expect(screen.getByText(/保存状態: Drive保存済み \/ Drive TODO\.md 読込済み/)).toBeInTheDocument();
+
+    await userEvent.type(screen.getByLabelText("新しいTODO"), "未保存タスク");
+    await userEvent.click(screen.getByRole("button", { name: "追加" }));
+
+    await waitFor(() => {
+      expect(screen.getByText(/保存状態: 未保存変更あり \/ Drive TODO\.md 読込済み/)).toBeInTheDocument();
+    });
   });
 
   it("Drive 再読込で TODO.md が無いときも localStorage の下書きを維持する", async () => {
